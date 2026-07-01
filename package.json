@@ -1,0 +1,40 @@
+{
+  "name": "edusg",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"node server/index.js\" \"vite --host 127.0.0.1\"",
+    "dev:client": "vite --host 127.0.0.1",
+    "dev:server": "node server/index.js",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "node server/index.js",
+    "setup:supabase": "node scripts/setup-supabase.mjs",
+    "setup": "node scripts/auto-setup.mjs",
+    "db:sync": "node scripts/sync-local-db.mjs",
+    "db:push": "npx supabase db push",
+    "deploy": "vercel --prod",
+    "test:mobile": "playwright test tests/mobile-layout.spec.js",
+    "test:dashboards": "playwright test tests/dashboard-student.spec.js tests/dashboard-parent.spec.js tests/dashboard-admin.spec.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.1",
+    "vite": "^6.0.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "autoprefixer": "^10.4.20",
+    "playwright": "^1.61.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
+  }
+}

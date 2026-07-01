@@ -1,0 +1,14 @@
+node_modules
+dist
+data/database.json
+.env
+.DS_Store
+*.log
+Math/
+
+test-results/
+
+.vercel
+.env*
+!.env.example
+setup.secrets.json
