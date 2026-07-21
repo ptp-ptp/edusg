@@ -23,6 +23,9 @@ importers:
       express:
         specifier: ^4.21.2
         version: 4.22.2
+      hanzilookup-js:
+        specifier: ^1.0.3
+        version: 1.0.3
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@18.3.1)
@@ -809,6 +812,9 @@ packages:
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
+
+  hanzilookup-js@1.0.3:
+    resolution: {integrity: sha512-hEp1aBjbksw19exxZPrUINnq0LulEPG9k0SH5H/IiHomrVfILLo91kSaNHvI/wwdcemtWaVQEXG3mlxHdkfx9Q==}
 
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
@@ -2043,6 +2049,8 @@ snapshots:
       is-glob: 4.0.3
 
   gopd@1.2.0: {}
+
+  hanzilookup-js@1.0.3: {}
 
   has-flag@4.0.0: {}
 

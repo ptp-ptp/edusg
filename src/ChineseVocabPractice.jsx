@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Check, Languages, Target, Volume2, X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { BookMarked, Check, Languages, Target, Volume2, X } from "lucide-react";
 import ChinesePracticeModal from "./ChinesePracticeModal";
 import ChineseWordGame from "./ChineseWordGame";
+import ChineseDictionaryModal from "./components/chinese/ChineseDictionaryModal.jsx";
 import {
   chineseGrades,
   getWordPinyin,
@@ -24,6 +25,8 @@ export default function ChineseVocabPractice({
   const [mode, setMode] = useState("vocab");
   const [search, setSearch] = useState("");
   const [wordListModal, setWordListModal] = useState(null);
+  const [dictionaryOpen, setDictionaryOpen] = useState(false);
+  const returnModeRef = useRef("vocab");
 
   const words = getWordsForGrade(grade);
   const rememberedSet = useMemo(
@@ -58,12 +61,31 @@ export default function ChineseVocabPractice({
   }, []);
 
   function openPractice() {
+    if (mode !== "practice" && mode !== "dictionary") {
+      returnModeRef.current = mode;
+    }
+    setDictionaryOpen(false);
     setMode("practice");
     onStartPractice?.();
   }
 
   function closePractice() {
-    setMode("vocab");
+    setMode(returnModeRef.current || "vocab");
+  }
+
+  function openDictionary() {
+    if (mode !== "dictionary" && mode !== "practice") {
+      returnModeRef.current = mode;
+    } else if (mode === "practice") {
+      returnModeRef.current = returnModeRef.current || "vocab";
+    }
+    setMode("dictionary");
+    setDictionaryOpen(true);
+  }
+
+  function closeDictionary() {
+    setDictionaryOpen(false);
+    setMode(returnModeRef.current || "vocab");
   }
 
   const isPracticeOpen = mode === "practice";
@@ -135,23 +157,32 @@ export default function ChineseVocabPractice({
           ))}
         </div>
 
-        <div className="mt-5 flex rounded-lg bg-white/20 p-1">
+        <div className="mt-5 grid grid-cols-4 gap-1 rounded-lg bg-white/20 p-1">
           {[
+            { id: "dictionary", label: "Dictionary", Icon: BookMarked },
             { id: "vocab", label: "Vocab" },
             { id: "practice", label: "Practice" },
             { id: "game", label: "Game" }
           ].map((option) => (
             <button
               key={option.id}
+              type="button"
               onClick={() => {
-                if (option.id === "practice") openPractice();
-                else setMode(option.id);
+                if (option.id === "dictionary") openDictionary();
+                else if (option.id === "practice") openPractice();
+                else {
+                  setDictionaryOpen(false);
+                  setMode(option.id);
+                }
               }}
               className={cx(
-                "flex-1 rounded-md px-4 py-3 text-sm font-black",
-                mode === option.id ? "bg-white text-coral" : "text-white"
+                "flex items-center justify-center gap-1 rounded-md px-2 py-3 text-xs font-black sm:gap-1.5 sm:px-4 sm:text-sm",
+                mode === option.id || (option.id === "dictionary" && dictionaryOpen)
+                  ? "bg-white text-coral"
+                  : "text-white"
               )}
             >
+              {option.Icon ? <option.Icon className="h-4 w-4 shrink-0" /> : null}
               {option.label}
             </button>
           ))}
@@ -163,6 +194,13 @@ export default function ChineseVocabPractice({
           <Languages className="mx-auto h-10 w-10 text-slate-300" />
           <p className="mt-4 font-black">{grade} vocabulary coming soon</p>
           <p className="mt-2 text-sm">P1 words are ready. Other levels will be added next.</p>
+          <p className="mt-3 text-sm">
+            You can still open{" "}
+            <button type="button" onClick={openDictionary} className="font-black text-coral underline">
+              Dictionary
+            </button>{" "}
+            to draw and look up words.
+          </p>
         </div>
       ) : mode === "game" ? (
         <ChineseWordGame
@@ -256,6 +294,7 @@ export default function ChineseVocabPractice({
           onClose={closePractice}
         />
       )}
+      {dictionaryOpen && <ChineseDictionaryModal onClose={closeDictionary} />}
       {wordListModal && (
         <WordListModal
           config={wordListModalConfig[wordListModal]}

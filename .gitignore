@@ -12,3 +12,5 @@ test-results/
 .env*
 !.env.example
 setup.secrets.json
+scripts/data/cedict_ts.u8
+scripts/data/cedict_1_0_ts_utf-8_mdbg.txt.gz
