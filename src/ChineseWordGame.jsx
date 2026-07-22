@@ -1,26 +1,39 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Clock, RotateCcw, Sparkles, Star, Trophy, Zap } from "lucide-react";
-import { buildMemoryMatchDeck, pickGameWords, wordKey } from "./data/chinese/index.js";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Clock, RefreshCw, RotateCcw, Sparkles, Star, Trophy, Zap } from "lucide-react";
+import { entryGrade, formatChineseGrade, pickGameWords, wordKey } from "./data/chinese/index.js";
+import { useCelebration } from "./components/shared/Celebration.jsx";
 
 function cx(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-const PAIR_COUNT = 6;
+const PAIR_COUNT = 5;
+const FAST_MATCH_MS = 3000;
+const SUPER_FAST_MS = 1500;
+
+function shuffle(list) {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 
 export default function ChineseWordGame({ grade, words, rememberedSet, onWordRemembered }) {
+  const { confettiCelebration, celebrateCorrect, celebrateWrong } = useCelebration();
   const [phase, setPhase] = useState("plan");
-  const [cards, setCards] = useState([]);
-  const [flippedIds, setFlippedIds] = useState([]);
-  const [matchedPairIds, setMatchedPairIds] = useState(new Set());
-  const [moves, setMoves] = useState(0);
+  const [roundWords, setRoundWords] = useState([]);
+  const [zhItems, setZhItems] = useState([]);
+  const [enItems, setEnItems] = useState([]);
+  const [selectedZh, setSelectedZh] = useState(null);
+  const [selectedEn, setSelectedEn] = useState(null);
+  const [matchedIds, setMatchedIds] = useState(new Set());
+  const [fastIds, setFastIds] = useState(new Set());
+  const [wrongPair, setWrongPair] = useState(null);
+  const [score, setScore] = useState(0);
   const [seconds, setSeconds] = useState(0);
-  const [lockBoard, setLockBoard] = useState(false);
-
-  const gameWords = useMemo(
-    () => pickGameWords(words, rememberedSet, grade, PAIR_COUNT),
-    [words, rememberedSet, grade]
-  );
+  const lastMatchAtRef = useRef(0);
 
   useEffect(() => {
     if (phase !== "playing") return undefined;
@@ -29,79 +42,116 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
   }, [phase]);
 
   function startGame() {
-    setCards(buildMemoryMatchDeck(gameWords, grade));
-    setFlippedIds([]);
-    setMatchedPairIds(new Set());
-    setMoves(0);
+    const picked = pickGameWords(words, rememberedSet, grade, PAIR_COUNT);
+    const items = picked.map((entry) => ({
+      pairId: wordKey(entryGrade(entry, grade), entry),
+      word: entry.word,
+      english: entry.english
+    }));
+    setRoundWords(items);
+    setZhItems(shuffle(items));
+    setEnItems(shuffle(items));
+    setSelectedZh(null);
+    setSelectedEn(null);
+    setMatchedIds(new Set());
+    setFastIds(new Set());
+    setWrongPair(null);
+    setScore(0);
     setSeconds(0);
-    setLockBoard(false);
+    lastMatchAtRef.current = Date.now();
     setPhase("playing");
   }
 
   function resetToPlan() {
     setPhase("plan");
-    setCards([]);
-    setFlippedIds([]);
-    setMatchedPairIds(new Set());
-    setMoves(0);
+    setRoundWords([]);
+    setZhItems([]);
+    setEnItems([]);
+    setSelectedZh(null);
+    setSelectedEn(null);
+    setMatchedIds(new Set());
+    setFastIds(new Set());
+    setWrongPair(null);
+    setScore(0);
     setSeconds(0);
-    setLockBoard(false);
   }
 
-  async function handleCardClick(cardId) {
-    if (lockBoard || phase !== "playing") return;
-    const card = cards.find((entry) => entry.id === cardId);
-    if (!card || matchedPairIds.has(card.pairId) || flippedIds.includes(cardId)) return;
+  async function evaluatePair(zhId, enId, origin) {
+    if (zhId === enId) {
+      const elapsed = Date.now() - lastMatchAtRef.current;
+      const isFast = elapsed < FAST_MATCH_MS;
+      const stars = elapsed < SUPER_FAST_MS ? 3 : isFast ? 2 : 1;
+      lastMatchAtRef.current = Date.now();
 
-    const nextFlipped = [...flippedIds, cardId];
-    setFlippedIds(nextFlipped);
-    if (nextFlipped.length < 2) return;
+      const nextMatched = new Set(matchedIds);
+      nextMatched.add(zhId);
+      setMatchedIds(nextMatched);
+      setScore((value) => value + (isFast ? 2 : 1));
+      setSelectedZh(null);
+      setSelectedEn(null);
+      celebrateCorrect({ stars, origin });
 
-    setMoves((value) => value + 1);
-    setLockBoard(true);
-
-    const first = cards.find((entry) => entry.id === nextFlipped[0]);
-    const second = cards.find((entry) => entry.id === nextFlipped[1]);
-    const isMatch = first.pairId === second.pairId;
-
-    window.setTimeout(async () => {
-      if (isMatch) {
-        const nextMatched = new Set(matchedPairIds);
-        nextMatched.add(first.pairId);
-        setMatchedPairIds(nextMatched);
-        setFlippedIds([]);
-        setLockBoard(false);
-
-        if (!rememberedSet.has(first.pairId)) {
-          await onWordRemembered(first.pairId);
+      if (isFast) {
+        setFastIds((current) => {
+          const next = new Set(current);
+          next.add(zhId);
+          return next;
+        });
+        if (!rememberedSet.has(zhId)) {
+          await onWordRemembered(zhId);
         }
-
-        if (nextMatched.size >= gameWords.length) {
-          setPhase("complete");
-        }
-      } else {
-        setFlippedIds([]);
-        setLockBoard(false);
       }
-    }, 700);
+
+      if (nextMatched.size >= roundWords.length) {
+        setPhase("complete");
+        confettiCelebration();
+      }
+    } else {
+      celebrateWrong();
+      setWrongPair({ zh: zhId, en: enId });
+      window.setTimeout(() => {
+        setWrongPair(null);
+        setSelectedZh(null);
+        setSelectedEn(null);
+      }, 600);
+    }
   }
 
-  const pairsFound = matchedPairIds.size;
+  function clickOrigin(event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+
+  function handleZhClick(pairId, event) {
+    if (phase !== "playing" || matchedIds.has(pairId) || wrongPair) return;
+    setSelectedZh(pairId);
+    if (selectedEn) evaluatePair(pairId, selectedEn, clickOrigin(event));
+  }
+
+  function handleEnClick(pairId, event) {
+    if (phase !== "playing" || matchedIds.has(pairId) || wrongPair) return;
+    setSelectedEn(pairId);
+    if (selectedZh) evaluatePair(selectedZh, pairId, clickOrigin(event));
+  }
+
+  const pairsFound = matchedIds.size;
   const starRating = useMemo(() => {
     if (phase !== "complete") return 0;
-    const perfectMoves = gameWords.length;
-    if (moves <= perfectMoves + 2) return 3;
-    if (moves <= perfectMoves + 6) return 2;
+    if (fastIds.size >= roundWords.length) return 3;
+    if (fastIds.size >= Math.ceil(roundWords.length / 2)) return 2;
     return 1;
-  }, [phase, moves, gameWords.length]);
+  }, [phase, fastIds, roundWords.length]);
 
   const formatTime = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  const unrememberedCount = words.filter(
+    (entry) => !rememberedSet.has(wordKey(entryGrade(entry, grade), entry))
+  ).length;
 
   if (words.length < 2) {
     return (
       <div className="p-8 text-center text-slate-500">
         <p className="font-black">Not enough words for a game yet.</p>
-        <p className="mt-2 text-sm">Add vocabulary for {grade} first.</p>
+        <p className="mt-2 text-sm">Add vocabulary for {formatChineseGrade(grade)} first.</p>
       </div>
     );
   }
@@ -117,16 +167,16 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
             </div>
             <h3 className="mt-4 text-2xl font-black">Match characters to meanings</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              A memory game to help you remember Chinese words. Flip cards and find pairs — each Chinese character
-              matches its English meaning.
+              {PAIR_COUNT} Chinese words you haven't remembered yet appear on the left, and their English meanings
+              on the right. Tap a word, then tap its meaning to make a pair.
             </p>
 
             <div className="mt-6 space-y-3">
               {[
-                "Tap a card to flip it over.",
-                "Tap a second card — if they are a pair (字 ↔ meaning), both stay open.",
-                "Match all pairs. Fewer moves means more stars.",
-                "Every matched pair is saved to your remembered words."
+                "Tap a Chinese word, then tap the matching English meaning.",
+                "Every correct pair earns 1 point.",
+                "Match within 3 seconds to double it (2 points) — fast pairs are saved as remembered!",
+                "Match all pairs to finish the round."
               ].map((step, index) => (
                 <div key={step} className="flex gap-3 text-sm leading-6 text-slate-600">
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-coral text-xs font-black text-white">
@@ -138,8 +188,8 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
             </div>
 
             <div className="mt-6 rounded-lg border border-teal/20 bg-teal/5 p-4 text-sm leading-6 text-slate-600">
-              <span className="font-black text-teal">Tip:</span> Unremembered words are picked first, so you practise
-              what you still need to learn.
+              <span className="font-black text-teal">Tip:</span> Words are picked from your "To Learn" list, so you
+              practise what you still need to remember.
             </div>
           </div>
 
@@ -147,8 +197,8 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
             <div className="text-sm font-black uppercase tracking-wide text-slate-400">This round</div>
             <div className="mt-4 space-y-3">
               <PlanStat icon={Zap} title="Pairs" value={`${Math.min(PAIR_COUNT, words.length)} pairs`} />
-              <PlanStat icon={Star} title="Cards" value={`${Math.min(PAIR_COUNT, words.length) * 2} cards`} />
-              <PlanStat icon={Trophy} title="Remembered" value={`${words.filter((entry) => rememberedSet.has(wordKey(grade, entry))).length} / ${words.length}`} />
+              <PlanStat icon={Star} title="Fast bonus" value="2 points under 3s" />
+              <PlanStat icon={Trophy} title="To learn" value={`${unrememberedCount} / ${words.length}`} />
             </div>
             <button
               onClick={startGame}
@@ -157,13 +207,6 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
               Start Game
             </button>
           </div>
-        </div>
-
-        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-          <div className="text-sm font-black text-slate-700">Coming next</div>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Meaning Sprint (timed quiz) and Listen &amp; Pick (audio character match) will join this tab later.
-          </p>
         </div>
       </div>
     );
@@ -176,7 +219,11 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
           <Trophy className="h-10 w-10" />
         </div>
         <h3 className="mt-5 text-3xl font-black">All pairs matched!</h3>
-        <p className="mt-2 text-slate-500">Great job — those words are now in your remembered list.</p>
+        <p className="mt-2 text-slate-500">
+          {fastIds.size > 0
+            ? `${fastIds.size} fast ${fastIds.size === 1 ? "pair" : "pairs"} saved to your remembered words.`
+            : "Match faster than 3 seconds to save words as remembered."}
+        </p>
 
         <div className="mt-6 flex justify-center gap-1">
           {[1, 2, 3].map((star) => (
@@ -188,9 +235,9 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
         </div>
 
         <div className="mx-auto mt-6 grid max-w-sm grid-cols-3 gap-3">
-          <MiniStat title="Moves" value={String(moves)} />
+          <MiniStat title="Score" value={String(score)} />
+          <MiniStat title="Fast pairs" value={`${fastIds.size}/${roundWords.length}`} />
           <MiniStat title="Time" value={formatTime} />
-          <MiniStat title="Pairs" value={String(pairsFound)} />
         </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -210,15 +257,16 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-sm font-black text-coral">生字配对 · Word Match</div>
-          <h3 className="mt-1 text-xl font-black">Find all matching pairs</h3>
+          <h3 className="mt-1 text-xl font-black">Tap a word, then its meaning</h3>
         </div>
         <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1 rounded-md bg-cloud px-3 py-2 text-sm font-black text-coral">
+            <Star className="h-4 w-4" />
+            {score} pts
+          </span>
           <span className="inline-flex items-center gap-1 rounded-md bg-cloud px-3 py-2 text-sm font-black text-teal">
             <Zap className="h-4 w-4" />
-            {pairsFound}/{gameWords.length}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-md bg-cloud px-3 py-2 text-sm font-black text-slate-600">
-            Moves {moves}
+            {pairsFound}/{roundWords.length}
           </span>
           <span className="inline-flex items-center gap-1 rounded-md bg-cloud px-3 py-2 text-sm font-black text-slate-600">
             <Clock className="h-4 w-4" />
@@ -227,35 +275,72 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-        {cards.map((card) => {
-          const isFlipped = flippedIds.includes(card.id) || matchedPairIds.has(card.pairId);
-          const isMatched = matchedPairIds.has(card.pairId);
-          return (
-            <button
-              key={card.id}
-              onClick={() => handleCardClick(card.id)}
-              disabled={lockBoard && !flippedIds.includes(card.id)}
-              className={cx(
-                "relative min-h-24 rounded-lg border-2 p-3 text-center font-black transition duration-300",
-                isMatched && "border-green-300 bg-green-50",
-                isFlipped && !isMatched && "border-coral bg-orange-50",
-                !isFlipped && "border-slate-200 bg-gradient-to-br from-teal to-coral text-white hover:scale-[1.02]",
-                card.kind === "chinese" && isFlipped && "text-3xl md:text-4xl",
-                card.kind === "english" && isFlipped && "text-xs leading-5 md:text-sm"
-              )}
-            >
-              {isFlipped ? (
-                <span className={cx(card.kind === "english" && "line-clamp-4")}>{card.label}</span>
-              ) : (
-                <span className="text-lg text-white/90">?</span>
-              )}
-            </button>
-          );
-        })}
+      <div className="mt-2 text-xs font-bold text-slate-400">
+        Match in under 3 seconds for double points + auto-save as remembered.
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-6">
+        <div className="space-y-3">
+          {zhItems.map((item) => {
+            const isMatched = matchedIds.has(item.pairId);
+            const isSelected = selectedZh === item.pairId;
+            const isWrong = wrongPair?.zh === item.pairId;
+            const isFast = fastIds.has(item.pairId);
+            return (
+              <button
+                key={`zh-${item.pairId}`}
+                type="button"
+                onClick={(event) => handleZhClick(item.pairId, event)}
+                disabled={isMatched}
+                className={cx(
+                  "chinese-handwriting w-full rounded-lg border-2 px-3 py-4 text-center text-4xl leading-none transition sm:text-5xl",
+                  isMatched && "border-green-300 bg-green-50 text-green-600 opacity-70",
+                  isWrong && "animate-pulse border-orange-400 bg-orange-50",
+                  isSelected && !isWrong && "border-coral bg-orange-50 shadow-md",
+                  !isMatched && !isSelected && !isWrong && "border-slate-200 bg-white hover:border-coral/40 hover:shadow"
+                )}
+              >
+                {item.word}
+                {isMatched && isFast && <span className="ml-1 align-top text-base">⚡</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="space-y-3">
+          {enItems.map((item) => {
+            const isMatched = matchedIds.has(item.pairId);
+            const isSelected = selectedEn === item.pairId;
+            const isWrong = wrongPair?.en === item.pairId;
+            return (
+              <button
+                key={`en-${item.pairId}`}
+                type="button"
+                onClick={(event) => handleEnClick(item.pairId, event)}
+                disabled={isMatched}
+                className={cx(
+                  "flex min-h-[4.5rem] w-full items-center justify-center rounded-lg border-2 px-3 py-3 text-center text-lg font-bold leading-snug transition sm:text-xl",
+                  isMatched && "border-green-300 bg-green-50 text-green-600 opacity-70",
+                  isWrong && "animate-pulse border-orange-400 bg-orange-50 text-orange-700",
+                  isSelected && !isWrong && "border-coral bg-orange-50 text-coral shadow-md",
+                  !isMatched && !isSelected && !isWrong && "border-slate-200 bg-white text-slate-700 hover:border-coral/40 hover:shadow"
+                )}
+              >
+                {item.english}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
+        <button
+          onClick={startGame}
+          className="inline-flex items-center gap-2 rounded-md bg-teal px-5 py-3 text-sm font-black text-white shadow-lg shadow-teal/20"
+        >
+          <RefreshCw className="h-4 w-4" />
+          New Words
+        </button>
         <button
           onClick={resetToPlan}
           className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-5 py-3 text-sm font-black text-slate-700"

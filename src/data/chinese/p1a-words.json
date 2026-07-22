@@ -1,0 +1,2271 @@
+{
+  "name": "P1A Words",
+  "semester": "Sem 1–2",
+  "words": [
+    {
+      "lesson": "第一课",
+      "word": "衣",
+      "type": "我会认",
+      "english": "clothes",
+      "pinyin": "yī",
+      "group": "objects"
+    },
+    {
+      "lesson": "第一课",
+      "word": "鱼",
+      "type": "我会认",
+      "english": "fish",
+      "pinyin": "yú",
+      "group": "animals"
+    },
+    {
+      "lesson": "第一课",
+      "word": "雨",
+      "type": "我会认",
+      "english": "rain",
+      "pinyin": "yǔ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第一课",
+      "word": "一",
+      "type": "我会认",
+      "english": "one",
+      "pinyin": "yī",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第一课",
+      "word": "二",
+      "type": "我会认",
+      "english": "two",
+      "pinyin": "èr",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第一课",
+      "word": "五",
+      "type": "我会认",
+      "english": "five",
+      "pinyin": "wǔ",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第一课",
+      "word": "耳",
+      "type": "我会认",
+      "english": "ear",
+      "pinyin": "ěr",
+      "group": "body"
+    },
+    {
+      "lesson": "第一课",
+      "word": "牙",
+      "type": "我会认",
+      "english": "tooth",
+      "pinyin": "yá",
+      "group": "body"
+    },
+    {
+      "lesson": "第一课",
+      "word": "口",
+      "type": "我会认",
+      "english": "mouth",
+      "pinyin": "kǒu",
+      "group": "body"
+    },
+    {
+      "lesson": "第一课",
+      "word": "人",
+      "type": "我会认",
+      "english": "person",
+      "pinyin": "rén",
+      "group": "family"
+    },
+    {
+      "lesson": "第一课",
+      "word": "一",
+      "type": "我会写",
+      "english": "one",
+      "pinyin": "yī",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第一课",
+      "word": "二",
+      "type": "我会写",
+      "english": "two",
+      "pinyin": "èr",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第一课",
+      "word": "五",
+      "type": "我会写",
+      "english": "five",
+      "pinyin": "wǔ",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第一课",
+      "word": "口",
+      "type": "我会写",
+      "english": "mouth",
+      "pinyin": "kǒu",
+      "group": "body"
+    },
+    {
+      "lesson": "第一课",
+      "word": "人",
+      "type": "我会写",
+      "english": "person",
+      "pinyin": "rén",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "木",
+      "type": "我会认",
+      "english": "wood; tree",
+      "pinyin": "mù",
+      "group": "nature"
+    },
+    {
+      "lesson": "第二课",
+      "word": "土",
+      "type": "我会认",
+      "english": "earth; soil",
+      "pinyin": "tǔ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第二课",
+      "word": "马",
+      "type": "我会认",
+      "english": "horse",
+      "pinyin": "mǎ",
+      "group": "animals"
+    },
+    {
+      "lesson": "第二课",
+      "word": "八",
+      "type": "我会认",
+      "english": "eight",
+      "pinyin": "bā",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第二课",
+      "word": "巴",
+      "type": "我会认",
+      "english": "to cling; suffix in words",
+      "pinyin": "bā",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第二课",
+      "word": "你",
+      "type": "我会认",
+      "english": "you",
+      "pinyin": "nǐ",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "我",
+      "type": "我会认",
+      "english": "I; me",
+      "pinyin": "wǒ",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "也",
+      "type": "我会认",
+      "english": "also; too",
+      "pinyin": "yě",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "他",
+      "type": "我会认",
+      "english": "he; him",
+      "pinyin": "tā",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "弟",
+      "type": "我会认",
+      "english": "younger brother",
+      "pinyin": "dì",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "不",
+      "type": "我会认",
+      "english": "no; not",
+      "pinyin": "bù",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第二课",
+      "word": "爸",
+      "type": "我会认",
+      "english": "dad",
+      "pinyin": "bà",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "她",
+      "type": "我会认",
+      "english": "she; her",
+      "pinyin": "tā",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "妈",
+      "type": "我会认",
+      "english": "mum; mother",
+      "pinyin": "mā",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "的",
+      "type": "我会认",
+      "english": "of; possessive particle",
+      "pinyin": "de",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第二课",
+      "word": "父",
+      "type": "我会认",
+      "english": "father",
+      "pinyin": "fù",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "母",
+      "type": "我会认",
+      "english": "mother",
+      "pinyin": "mǔ",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "女",
+      "type": "我会认",
+      "english": "female; girl",
+      "pinyin": "nǚ",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "儿",
+      "type": "我会认",
+      "english": "child; son",
+      "pinyin": "ér",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "木",
+      "type": "我会写",
+      "english": "wood; tree",
+      "pinyin": "mù",
+      "group": "nature"
+    },
+    {
+      "lesson": "第二课",
+      "word": "土",
+      "type": "我会写",
+      "english": "earth; soil",
+      "pinyin": "tǔ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第二课",
+      "word": "八",
+      "type": "我会写",
+      "english": "eight",
+      "pinyin": "bā",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第二课",
+      "word": "也",
+      "type": "我会写",
+      "english": "also; too",
+      "pinyin": "yě",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "不",
+      "type": "我会写",
+      "english": "no; not",
+      "pinyin": "bù",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第二课",
+      "word": "女",
+      "type": "我会写",
+      "english": "female; girl",
+      "pinyin": "nǚ",
+      "group": "family"
+    },
+    {
+      "lesson": "第二课",
+      "word": "儿",
+      "type": "我会写",
+      "english": "child; son",
+      "pinyin": "ér",
+      "group": "family"
+    },
+    {
+      "lesson": "第三课",
+      "word": "力",
+      "type": "我会认",
+      "english": "strength; power",
+      "pinyin": "lì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "河",
+      "type": "我会认",
+      "english": "river",
+      "pinyin": "hé",
+      "group": "nature"
+    },
+    {
+      "lesson": "第三课",
+      "word": "禾",
+      "type": "我会认",
+      "english": "grain plant",
+      "pinyin": "hé",
+      "group": "nature"
+    },
+    {
+      "lesson": "第三课",
+      "word": "立",
+      "type": "我会认",
+      "english": "stand",
+      "pinyin": "lì",
+      "group": "actions"
+    },
+    {
+      "lesson": "第三课",
+      "word": "米",
+      "type": "我会认",
+      "english": "rice",
+      "pinyin": "mǐ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第三课",
+      "word": "合",
+      "type": "我会认",
+      "english": "join; close; together",
+      "pinyin": "hé",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "气",
+      "type": "我会认",
+      "english": "air; gas",
+      "pinyin": "qì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "和",
+      "type": "我会认",
+      "english": "and; with; peace",
+      "pinyin": "hé",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "哥",
+      "type": "我会认",
+      "english": "older brother",
+      "pinyin": "gē",
+      "group": "family"
+    },
+    {
+      "lesson": "第三课",
+      "word": "几",
+      "type": "我会认",
+      "english": "how many; several",
+      "pinyin": "jǐ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "七",
+      "type": "我会认",
+      "english": "seven",
+      "pinyin": "qī",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第三课",
+      "word": "了",
+      "type": "我会认",
+      "english": "completed-action particle",
+      "pinyin": "le",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "个",
+      "type": "我会认",
+      "english": "general measure word",
+      "pinyin": "gè",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "句",
+      "type": "我会认",
+      "english": "sentence",
+      "pinyin": "jù",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "可",
+      "type": "我会认",
+      "english": "can; may",
+      "pinyin": "kě",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "以",
+      "type": "我会认",
+      "english": "use; by; in order to",
+      "pinyin": "yǐ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "吗",
+      "type": "我会认",
+      "english": "question particle",
+      "pinyin": "ma",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "去",
+      "type": "我会认",
+      "english": "go",
+      "pinyin": "qù",
+      "group": "actions"
+    },
+    {
+      "lesson": "第三课",
+      "word": "力",
+      "type": "我会写",
+      "english": "strength; power",
+      "pinyin": "lì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "禾",
+      "type": "我会写",
+      "english": "grain plant",
+      "pinyin": "hé",
+      "group": "nature"
+    },
+    {
+      "lesson": "第三课",
+      "word": "几",
+      "type": "我会写",
+      "english": "how many; several",
+      "pinyin": "jǐ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "七",
+      "type": "我会写",
+      "english": "seven",
+      "pinyin": "qī",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第三课",
+      "word": "个",
+      "type": "我会写",
+      "english": "general measure word",
+      "pinyin": "gè",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "可",
+      "type": "我会写",
+      "english": "can; may",
+      "pinyin": "kě",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第三课",
+      "word": "去",
+      "type": "我会写",
+      "english": "go",
+      "pinyin": "qù",
+      "group": "actions"
+    },
+    {
+      "lesson": "第四课",
+      "word": "日",
+      "type": "我会认",
+      "english": "sun; day",
+      "pinyin": "rì",
+      "group": "nature"
+    },
+    {
+      "lesson": "第四课",
+      "word": "石",
+      "type": "我会认",
+      "english": "stone",
+      "pinyin": "shí",
+      "group": "nature"
+    },
+    {
+      "lesson": "第四课",
+      "word": "子",
+      "type": "我会认",
+      "english": "child; seed; suffix",
+      "pinyin": "zi",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "字",
+      "type": "我会认",
+      "english": "word; character",
+      "pinyin": "zì",
+      "group": "school"
+    },
+    {
+      "lesson": "第四课",
+      "word": "车",
+      "type": "我会认",
+      "english": "vehicle; car",
+      "pinyin": "chē",
+      "group": "objects"
+    },
+    {
+      "lesson": "第四课",
+      "word": "四",
+      "type": "我会认",
+      "english": "four",
+      "pinyin": "sì",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第四课",
+      "word": "十",
+      "type": "我会认",
+      "english": "ten",
+      "pinyin": "shí",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第四课",
+      "word": "士",
+      "type": "我会认",
+      "english": "scholar; gentleman",
+      "pinyin": "shì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "只",
+      "type": "我会认",
+      "english": "only; measure word",
+      "pinyin": "zhǐ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "把",
+      "type": "我会认",
+      "english": "to hold; measure word",
+      "pinyin": "bǎ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "尺",
+      "type": "我会认",
+      "english": "ruler; foot/measure",
+      "pinyin": "chǐ",
+      "group": "school"
+    },
+    {
+      "lesson": "第四课",
+      "word": "是",
+      "type": "我会认",
+      "english": "is; am; are",
+      "pinyin": "shì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "书",
+      "type": "我会认",
+      "english": "book",
+      "pinyin": "shū",
+      "group": "school"
+    },
+    {
+      "lesson": "第四课",
+      "word": "出",
+      "type": "我会认",
+      "english": "go out; come out",
+      "pinyin": "chū",
+      "group": "places"
+    },
+    {
+      "lesson": "第四课",
+      "word": "自",
+      "type": "我会认",
+      "english": "self; from",
+      "pinyin": "zì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "己",
+      "type": "我会认",
+      "english": "self",
+      "pinyin": "jǐ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "它",
+      "type": "我会认",
+      "english": "it",
+      "pinyin": "tā",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "吃",
+      "type": "我会认",
+      "english": "eat",
+      "pinyin": "chī",
+      "group": "actions"
+    },
+    {
+      "lesson": "第四课",
+      "word": "日",
+      "type": "我会写",
+      "english": "sun; day",
+      "pinyin": "rì",
+      "group": "nature"
+    },
+    {
+      "lesson": "第四课",
+      "word": "子",
+      "type": "我会写",
+      "english": "child; seed; suffix",
+      "pinyin": "zi",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "车",
+      "type": "我会写",
+      "english": "vehicle; car",
+      "pinyin": "chē",
+      "group": "objects"
+    },
+    {
+      "lesson": "第四课",
+      "word": "四",
+      "type": "我会写",
+      "english": "four",
+      "pinyin": "sì",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第四课",
+      "word": "十",
+      "type": "我会写",
+      "english": "ten",
+      "pinyin": "shí",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第四课",
+      "word": "巴",
+      "type": "我会写",
+      "english": "to cling; suffix in words",
+      "pinyin": "bā",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "士",
+      "type": "我会写",
+      "english": "scholar; gentleman",
+      "pinyin": "shì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第四课",
+      "word": "只",
+      "type": "我会写",
+      "english": "only; measure word",
+      "pinyin": "zhǐ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "山",
+      "type": "我会认",
+      "english": "mountain",
+      "pinyin": "shān",
+      "group": "nature"
+    },
+    {
+      "lesson": "第五课",
+      "word": "羊",
+      "type": "我会认",
+      "english": "goat; sheep",
+      "pinyin": "yáng",
+      "group": "animals"
+    },
+    {
+      "lesson": "第五课",
+      "word": "毛",
+      "type": "我会认",
+      "english": "hair; fur",
+      "pinyin": "máo",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "草",
+      "type": "我会认",
+      "english": "grass",
+      "pinyin": "cǎo",
+      "group": "nature"
+    },
+    {
+      "lesson": "第五课",
+      "word": "太",
+      "type": "我会认",
+      "english": "too; very",
+      "pinyin": "tài",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "阳",
+      "type": "我会认",
+      "english": "sun; positive/yáng",
+      "pinyin": "yáng",
+      "group": "nature"
+    },
+    {
+      "lesson": "第五课",
+      "word": "王",
+      "type": "我会认",
+      "english": "king",
+      "pinyin": "wáng",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "三",
+      "type": "我会认",
+      "english": "three",
+      "pinyin": "sān",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第五课",
+      "word": "伞",
+      "type": "我会认",
+      "english": "umbrella",
+      "pinyin": "sǎn",
+      "group": "objects"
+    },
+    {
+      "lesson": "第五课",
+      "word": "包",
+      "type": "我会认",
+      "english": "bag; wrap",
+      "pinyin": "bāo",
+      "group": "objects"
+    },
+    {
+      "lesson": "第五课",
+      "word": "老",
+      "type": "我会认",
+      "english": "old",
+      "pinyin": "lǎo",
+      "group": "family"
+    },
+    {
+      "lesson": "第五课",
+      "word": "师",
+      "type": "我会认",
+      "english": "teacher; master",
+      "pinyin": "shī",
+      "group": "family"
+    },
+    {
+      "lesson": "第五课",
+      "word": "早",
+      "type": "我会认",
+      "english": "early; morning",
+      "pinyin": "zǎo",
+      "group": "time"
+    },
+    {
+      "lesson": "第五课",
+      "word": "安",
+      "type": "我会认",
+      "english": "peace; safe",
+      "pinyin": "ān",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "半",
+      "type": "我会认",
+      "english": "half",
+      "pinyin": "bàn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "午",
+      "type": "我会认",
+      "english": "noon",
+      "pinyin": "wǔ",
+      "group": "time"
+    },
+    {
+      "lesson": "第五课",
+      "word": "奶",
+      "type": "我会认",
+      "english": "milk; grandma",
+      "pinyin": "nǎi",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "玩",
+      "type": "我会认",
+      "english": "play",
+      "pinyin": "wán",
+      "group": "objects"
+    },
+    {
+      "lesson": "第五课",
+      "word": "具",
+      "type": "我会认",
+      "english": "tool; object",
+      "pinyin": "jù",
+      "group": "objects"
+    },
+    {
+      "lesson": "第五课",
+      "word": "山",
+      "type": "我会写",
+      "english": "mountain",
+      "pinyin": "shān",
+      "group": "nature"
+    },
+    {
+      "lesson": "第五课",
+      "word": "羊",
+      "type": "我会写",
+      "english": "goat; sheep",
+      "pinyin": "yáng",
+      "group": "animals"
+    },
+    {
+      "lesson": "第五课",
+      "word": "毛",
+      "type": "我会写",
+      "english": "hair; fur",
+      "pinyin": "máo",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "王",
+      "type": "我会写",
+      "english": "king",
+      "pinyin": "wáng",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第五课",
+      "word": "三",
+      "type": "我会写",
+      "english": "three",
+      "pinyin": "sān",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第五课",
+      "word": "书",
+      "type": "我会写",
+      "english": "book",
+      "pinyin": "shū",
+      "group": "school"
+    },
+    {
+      "lesson": "第五课",
+      "word": "早",
+      "type": "我会写",
+      "english": "early; morning",
+      "pinyin": "zǎo",
+      "group": "time"
+    },
+    {
+      "lesson": "第五课",
+      "word": "午",
+      "type": "我会写",
+      "english": "noon",
+      "pinyin": "wǔ",
+      "group": "time"
+    },
+    {
+      "lesson": "第六课",
+      "word": "鸟",
+      "type": "我会认",
+      "english": "bird",
+      "pinyin": "niǎo",
+      "group": "animals"
+    },
+    {
+      "lesson": "第六课",
+      "word": "竹",
+      "type": "我会认",
+      "english": "bamboo",
+      "pinyin": "zhú",
+      "group": "nature"
+    },
+    {
+      "lesson": "第六课",
+      "word": "田",
+      "type": "我会认",
+      "english": "field",
+      "pinyin": "tián",
+      "group": "nature"
+    },
+    {
+      "lesson": "第六课",
+      "word": "苗",
+      "type": "我会认",
+      "english": "seedling",
+      "pinyin": "miáo",
+      "group": "nature"
+    },
+    {
+      "lesson": "第六课",
+      "word": "象",
+      "type": "我会认",
+      "english": "elephant; image",
+      "pinyin": "xiàng",
+      "group": "animals"
+    },
+    {
+      "lesson": "第六课",
+      "word": "家",
+      "type": "我会认",
+      "english": "home; family",
+      "pinyin": "jiā",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "刀",
+      "type": "我会认",
+      "english": "knife",
+      "pinyin": "dāo",
+      "group": "objects"
+    },
+    {
+      "lesson": "第六课",
+      "word": "网",
+      "type": "我会认",
+      "english": "net; web",
+      "pinyin": "wǎng",
+      "group": "objects"
+    },
+    {
+      "lesson": "第六课",
+      "word": "在",
+      "type": "我会认",
+      "english": "at; in; on",
+      "pinyin": "zài",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "里",
+      "type": "我会认",
+      "english": "inside",
+      "pinyin": "lǐ",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "上",
+      "type": "我会认",
+      "english": "up; above; on",
+      "pinyin": "shàng",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "下",
+      "type": "我会认",
+      "english": "down; below; under",
+      "pinyin": "xià",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "大",
+      "type": "我会认",
+      "english": "big",
+      "pinyin": "dà",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第六课",
+      "word": "小",
+      "type": "我会认",
+      "english": "small",
+      "pinyin": "xiǎo",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第六课",
+      "word": "来",
+      "type": "我会认",
+      "english": "come",
+      "pinyin": "lái",
+      "group": "actions"
+    },
+    {
+      "lesson": "第六课",
+      "word": "哭",
+      "type": "我会认",
+      "english": "cry",
+      "pinyin": "kū",
+      "group": "actions"
+    },
+    {
+      "lesson": "第六课",
+      "word": "笑",
+      "type": "我会认",
+      "english": "smile; laugh",
+      "pinyin": "xiào",
+      "group": "actions"
+    },
+    {
+      "lesson": "第六课",
+      "word": "男",
+      "type": "我会认",
+      "english": "male; boy",
+      "pinyin": "nán",
+      "group": "body"
+    },
+    {
+      "lesson": "第六课",
+      "word": "爷",
+      "type": "我会认",
+      "english": "grandpa",
+      "pinyin": "yé",
+      "group": "family"
+    },
+    {
+      "lesson": "第六课",
+      "word": "姐",
+      "type": "我会认",
+      "english": "older sister",
+      "pinyin": "jiě",
+      "group": "family"
+    },
+    {
+      "lesson": "第六课",
+      "word": "田",
+      "type": "我会写",
+      "english": "field",
+      "pinyin": "tián",
+      "group": "nature"
+    },
+    {
+      "lesson": "第六课",
+      "word": "刀",
+      "type": "我会写",
+      "english": "knife",
+      "pinyin": "dāo",
+      "group": "objects"
+    },
+    {
+      "lesson": "第六课",
+      "word": "在",
+      "type": "我会写",
+      "english": "at; in; on",
+      "pinyin": "zài",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "上",
+      "type": "我会写",
+      "english": "up; above; on",
+      "pinyin": "shàng",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "下",
+      "type": "我会写",
+      "english": "down; below; under",
+      "pinyin": "xià",
+      "group": "places"
+    },
+    {
+      "lesson": "第六课",
+      "word": "大",
+      "type": "我会写",
+      "english": "big",
+      "pinyin": "dà",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第六课",
+      "word": "小",
+      "type": "我会写",
+      "english": "small",
+      "pinyin": "xiǎo",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第六课",
+      "word": "来",
+      "type": "我会写",
+      "english": "come",
+      "pinyin": "lái",
+      "group": "actions"
+    },
+    {
+      "lesson": "第七课",
+      "word": "果",
+      "type": "我会认",
+      "english": "fruit; result",
+      "pinyin": "guǒ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第七课",
+      "word": "开",
+      "type": "我会认",
+      "english": "open",
+      "pinyin": "kāi",
+      "group": "actions"
+    },
+    {
+      "lesson": "第七课",
+      "word": "瓜",
+      "type": "我会认",
+      "english": "melon",
+      "pinyin": "guā",
+      "group": "nature"
+    },
+    {
+      "lesson": "第七课",
+      "word": "火",
+      "type": "我会认",
+      "english": "fire",
+      "pinyin": "huǒ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第七课",
+      "word": "花",
+      "type": "我会认",
+      "english": "flower",
+      "pinyin": "huā",
+      "group": "nature"
+    },
+    {
+      "lesson": "第七课",
+      "word": "叶",
+      "type": "我会认",
+      "english": "leaf",
+      "pinyin": "yè",
+      "group": "nature"
+    },
+    {
+      "lesson": "第七课",
+      "word": "面",
+      "type": "我会认",
+      "english": "face; surface; noodles",
+      "pinyin": "miàn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第七课",
+      "word": "关",
+      "type": "我会认",
+      "english": "close; shut",
+      "pinyin": "guān",
+      "group": "actions"
+    },
+    {
+      "lesson": "第七课",
+      "word": "朵",
+      "type": "我会认",
+      "english": "flower measure word",
+      "pinyin": "duǒ",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第七课",
+      "word": "两",
+      "type": "我会认",
+      "english": "two; both",
+      "pinyin": "liǎng",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第七课",
+      "word": "片",
+      "type": "我会认",
+      "english": "slice; piece",
+      "pinyin": "piàn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第七课",
+      "word": "画",
+      "type": "我会认",
+      "english": "draw; picture",
+      "pinyin": "huà",
+      "group": "school"
+    },
+    {
+      "lesson": "第七课",
+      "word": "笔",
+      "type": "我会认",
+      "english": "pen; brush",
+      "pinyin": "bǐ",
+      "group": "school"
+    },
+    {
+      "lesson": "第七课",
+      "word": "长",
+      "type": "我会认",
+      "english": "long; grow",
+      "pinyin": "zhǎng",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第七课",
+      "word": "广",
+      "type": "我会认",
+      "english": "wide; broad",
+      "pinyin": "guǎng",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第七课",
+      "word": "多",
+      "type": "我会认",
+      "english": "many; much",
+      "pinyin": "duō",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第七课",
+      "word": "少",
+      "type": "我会认",
+      "english": "few; little",
+      "pinyin": "shǎo",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第七课",
+      "word": "床",
+      "type": "我会认",
+      "english": "bed",
+      "pinyin": "chuáng",
+      "group": "objects"
+    },
+    {
+      "lesson": "第七课",
+      "word": "开",
+      "type": "我会写",
+      "english": "open",
+      "pinyin": "kāi",
+      "group": "actions"
+    },
+    {
+      "lesson": "第七课",
+      "word": "火",
+      "type": "我会写",
+      "english": "fire",
+      "pinyin": "huǒ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第七课",
+      "word": "关",
+      "type": "我会写",
+      "english": "close; shut",
+      "pinyin": "guān",
+      "group": "actions"
+    },
+    {
+      "lesson": "第七课",
+      "word": "两",
+      "type": "我会写",
+      "english": "two; both",
+      "pinyin": "liǎng",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第七课",
+      "word": "长",
+      "type": "我会写",
+      "english": "long; grow",
+      "pinyin": "zhǎng",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第七课",
+      "word": "广",
+      "type": "我会写",
+      "english": "wide; broad",
+      "pinyin": "guǎng",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第七课",
+      "word": "多",
+      "type": "我会写",
+      "english": "many; much",
+      "pinyin": "duō",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第七课",
+      "word": "少",
+      "type": "我会写",
+      "english": "few; little",
+      "pinyin": "shǎo",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第八课",
+      "word": "目",
+      "type": "我会认",
+      "english": "eye",
+      "pinyin": "mù",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "舌",
+      "type": "我会认",
+      "english": "tongue",
+      "pinyin": "shé",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "手",
+      "type": "我会认",
+      "english": "hand",
+      "pinyin": "shǒu",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "足",
+      "type": "我会认",
+      "english": "foot",
+      "pinyin": "zú",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "本",
+      "type": "我会认",
+      "english": "book; root; this",
+      "pinyin": "běn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第八课",
+      "word": "工",
+      "type": "我会认",
+      "english": "work; worker",
+      "pinyin": "gōng",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第八课",
+      "word": "厂",
+      "type": "我会认",
+      "english": "factory",
+      "pinyin": "chǎng",
+      "group": "objects"
+    },
+    {
+      "lesson": "第八课",
+      "word": "走",
+      "type": "我会认",
+      "english": "walk; go",
+      "pinyin": "zǒu",
+      "group": "actions"
+    },
+    {
+      "lesson": "第八课",
+      "word": "跑",
+      "type": "我会认",
+      "english": "run",
+      "pinyin": "pǎo",
+      "group": "actions"
+    },
+    {
+      "lesson": "第八课",
+      "word": "飞",
+      "type": "我会认",
+      "english": "fly",
+      "pinyin": "fēi",
+      "group": "actions"
+    },
+    {
+      "lesson": "第八课",
+      "word": "妹",
+      "type": "我会认",
+      "english": "younger sister",
+      "pinyin": "mèi",
+      "group": "family"
+    },
+    {
+      "lesson": "第八课",
+      "word": "门",
+      "type": "我会认",
+      "english": "door",
+      "pinyin": "mén",
+      "group": "objects"
+    },
+    {
+      "lesson": "第八课",
+      "word": "看",
+      "type": "我会认",
+      "english": "look; see",
+      "pinyin": "kàn",
+      "group": "actions"
+    },
+    {
+      "lesson": "第八课",
+      "word": "见",
+      "type": "我会认",
+      "english": "see; meet",
+      "pinyin": "jiàn",
+      "group": "actions"
+    },
+    {
+      "lesson": "第八课",
+      "word": "问",
+      "type": "我会认",
+      "english": "ask",
+      "pinyin": "wèn",
+      "group": "actions"
+    },
+    {
+      "lesson": "第八课",
+      "word": "又",
+      "type": "我会认",
+      "english": "again; also",
+      "pinyin": "yòu",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第八课",
+      "word": "头",
+      "type": "我会认",
+      "english": "head",
+      "pinyin": "tóu",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "们",
+      "type": "我会认",
+      "english": "plural marker",
+      "pinyin": "men",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第八课",
+      "word": "身",
+      "type": "我会认",
+      "english": "body",
+      "pinyin": "shēn",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "体",
+      "type": "我会认",
+      "english": "body; form",
+      "pinyin": "tǐ",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "目",
+      "type": "我会写",
+      "english": "eye",
+      "pinyin": "mù",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "手",
+      "type": "我会写",
+      "english": "hand",
+      "pinyin": "shǒu",
+      "group": "body"
+    },
+    {
+      "lesson": "第八课",
+      "word": "本",
+      "type": "我会写",
+      "english": "book; root; this",
+      "pinyin": "běn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第八课",
+      "word": "工",
+      "type": "我会写",
+      "english": "work; worker",
+      "pinyin": "gōng",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第八课",
+      "word": "门",
+      "type": "我会写",
+      "english": "door",
+      "pinyin": "mén",
+      "group": "objects"
+    },
+    {
+      "lesson": "第八课",
+      "word": "见",
+      "type": "我会写",
+      "english": "see; meet",
+      "pinyin": "jiàn",
+      "group": "actions"
+    },
+    {
+      "lesson": "第八课",
+      "word": "又",
+      "type": "我会写",
+      "english": "again; also",
+      "pinyin": "yòu",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第八课",
+      "word": "头",
+      "type": "我会写",
+      "english": "head",
+      "pinyin": "tóu",
+      "group": "body"
+    },
+    {
+      "lesson": "第九课",
+      "word": "牛",
+      "type": "我会认",
+      "english": "cow; ox",
+      "pinyin": "niú",
+      "group": "animals"
+    },
+    {
+      "lesson": "第九课",
+      "word": "井",
+      "type": "我会认",
+      "english": "well",
+      "pinyin": "jǐng",
+      "group": "objects"
+    },
+    {
+      "lesson": "第九课",
+      "word": "虫",
+      "type": "我会认",
+      "english": "insect; worm",
+      "pinyin": "chóng",
+      "group": "animals"
+    },
+    {
+      "lesson": "第九课",
+      "word": "鸟",
+      "type": "我会认",
+      "english": "bird",
+      "pinyin": "niǎo",
+      "group": "animals"
+    },
+    {
+      "lesson": "第九课",
+      "word": "贝",
+      "type": "我会认",
+      "english": "shell",
+      "pinyin": "bèi",
+      "group": "animals"
+    },
+    {
+      "lesson": "第九课",
+      "word": "心",
+      "type": "我会认",
+      "english": "heart",
+      "pinyin": "xīn",
+      "group": "body"
+    },
+    {
+      "lesson": "第九课",
+      "word": "豆",
+      "type": "我会认",
+      "english": "bean",
+      "pinyin": "dòu",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "六",
+      "type": "我会认",
+      "english": "six",
+      "pinyin": "liù",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第九课",
+      "word": "支",
+      "type": "我会认",
+      "english": "measure word; branch",
+      "pinyin": "zhī",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "条",
+      "type": "我会认",
+      "english": "strip; measure word",
+      "pinyin": "tiáo",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "九",
+      "type": "我会认",
+      "english": "nine",
+      "pinyin": "jiǔ",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第九课",
+      "word": "粒",
+      "type": "我会认",
+      "english": "grain; small round item",
+      "pinyin": "lì",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "今",
+      "type": "我会认",
+      "english": "today; now",
+      "pinyin": "jīn",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第九课",
+      "word": "什",
+      "type": "我会认",
+      "english": "what (part of 什么)",
+      "pinyin": "shén",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "么",
+      "type": "我会认",
+      "english": "what (part of 什么)",
+      "pinyin": "me",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "华",
+      "type": "我会认",
+      "english": "Chinese; magnificent",
+      "pinyin": "huá",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "文",
+      "type": "我会认",
+      "english": "language; writing",
+      "pinyin": "wén",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "点",
+      "type": "我会认",
+      "english": "dot; point; o'clock",
+      "pinyin": "diǎn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "说",
+      "type": "我会认",
+      "english": "speak; say",
+      "pinyin": "shuō",
+      "group": "actions"
+    },
+    {
+      "lesson": "第九课",
+      "word": "话",
+      "type": "我会认",
+      "english": "speech; words",
+      "pinyin": "huà",
+      "group": "actions"
+    },
+    {
+      "lesson": "第九课",
+      "word": "牛",
+      "type": "我会写",
+      "english": "cow; ox",
+      "pinyin": "niú",
+      "group": "animals"
+    },
+    {
+      "lesson": "第九课",
+      "word": "贝",
+      "type": "我会写",
+      "english": "shell",
+      "pinyin": "bèi",
+      "group": "animals"
+    },
+    {
+      "lesson": "第九课",
+      "word": "六",
+      "type": "我会写",
+      "english": "six",
+      "pinyin": "liù",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第九课",
+      "word": "支",
+      "type": "我会写",
+      "english": "measure word; branch",
+      "pinyin": "zhī",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "九",
+      "type": "我会写",
+      "english": "nine",
+      "pinyin": "jiǔ",
+      "group": "numbers"
+    },
+    {
+      "lesson": "第九课",
+      "word": "什",
+      "type": "我会写",
+      "english": "what (part of 什么)",
+      "pinyin": "shén",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "么",
+      "type": "我会写",
+      "english": "what (part of 什么)",
+      "pinyin": "me",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第九课",
+      "word": "文",
+      "type": "我会写",
+      "english": "language; writing",
+      "pinyin": "wén",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第十课",
+      "word": "月",
+      "type": "我会认",
+      "english": "moon; month",
+      "pinyin": "yuè",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "天",
+      "type": "我会认",
+      "english": "sky; day",
+      "pinyin": "tiān",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "地",
+      "type": "我会认",
+      "english": "earth; ground",
+      "pinyin": "dì",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "风",
+      "type": "我会认",
+      "english": "wind",
+      "pinyin": "fēng",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "雷",
+      "type": "我会认",
+      "english": "thunder",
+      "pinyin": "léi",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "电",
+      "type": "我会认",
+      "english": "electricity",
+      "pinyin": "diàn",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "水",
+      "type": "我会认",
+      "english": "water",
+      "pinyin": "shuǐ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "寸",
+      "type": "我会认",
+      "english": "inch; tiny length",
+      "pinyin": "cùn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第十课",
+      "word": "方",
+      "type": "我会认",
+      "english": "square; direction",
+      "pinyin": "fāng",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第十课",
+      "word": "正",
+      "type": "我会认",
+      "english": "correct; straight",
+      "pinyin": "zhèng",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "反",
+      "type": "我会认",
+      "english": "opposite; reverse",
+      "pinyin": "fǎn",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "白",
+      "type": "我会认",
+      "english": "white",
+      "pinyin": "bái",
+      "group": "colours"
+    },
+    {
+      "lesson": "第十课",
+      "word": "好",
+      "type": "我会认",
+      "english": "good",
+      "pinyin": "hǎo",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "坏",
+      "type": "我会认",
+      "english": "bad; broken",
+      "pinyin": "huài",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "对",
+      "type": "我会认",
+      "english": "correct; opposite; to",
+      "pinyin": "duì",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "古",
+      "type": "我会认",
+      "english": "ancient",
+      "pinyin": "gǔ",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "旧",
+      "type": "我会认",
+      "english": "old; used",
+      "pinyin": "jiù",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第十课",
+      "word": "有",
+      "type": "我会认",
+      "english": "have; there is",
+      "pinyin": "yǒu",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "没",
+      "type": "我会认",
+      "english": "not have; no",
+      "pinyin": "méi",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "云",
+      "type": "我会认",
+      "english": "cloud",
+      "pinyin": "yún",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "月",
+      "type": "我会写",
+      "english": "moon; month",
+      "pinyin": "yuè",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "天",
+      "type": "我会写",
+      "english": "sky; day",
+      "pinyin": "tiān",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "水",
+      "type": "我会写",
+      "english": "water",
+      "pinyin": "shuǐ",
+      "group": "nature"
+    },
+    {
+      "lesson": "第十课",
+      "word": "寸",
+      "type": "我会写",
+      "english": "inch; tiny length",
+      "pinyin": "cùn",
+      "group": "grammar"
+    },
+    {
+      "lesson": "第十课",
+      "word": "正",
+      "type": "我会写",
+      "english": "correct; straight",
+      "pinyin": "zhèng",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "反",
+      "type": "我会写",
+      "english": "opposite; reverse",
+      "pinyin": "fǎn",
+      "group": "opposites"
+    },
+    {
+      "lesson": "第十课",
+      "word": "白",
+      "type": "我会写",
+      "english": "white",
+      "pinyin": "bái",
+      "group": "colours"
+    },
+    {
+      "lesson": "第十课",
+      "word": "古",
+      "type": "我会写",
+      "english": "ancient",
+      "pinyin": "gǔ",
+      "group": "opposites"
+    }
+  ],
+  "strokes": [
+    [
+      "第一课",
+      "点",
+      "dot"
+    ],
+    [
+      "第一课",
+      "横",
+      "horizontal stroke"
+    ],
+    [
+      "第一课",
+      "竖",
+      "vertical stroke"
+    ],
+    [
+      "第一课",
+      "横折",
+      "horizontal turning stroke"
+    ],
+    [
+      "第一课",
+      "撇",
+      "left-falling stroke"
+    ],
+    [
+      "第一课",
+      "捺",
+      "right-falling stroke"
+    ],
+    [
+      "第二课",
+      "横折钩",
+      "horizontal turning hook"
+    ],
+    [
+      "第二课",
+      "竖弯钩",
+      "vertical curved hook"
+    ],
+    [
+      "第二课",
+      "撇点",
+      "left-falling dot"
+    ],
+    [
+      "第三课",
+      "横折弯钩",
+      "horizontal turning curved hook"
+    ],
+    [
+      "第三课",
+      "竖钩",
+      "vertical hook"
+    ],
+    [
+      "第三课",
+      "撇折",
+      "left-falling turning stroke"
+    ],
+    [
+      "第四课",
+      "横撇",
+      "horizontal left-falling stroke"
+    ],
+    [
+      "第四课",
+      "弯钩",
+      "curved hook"
+    ],
+    [
+      "第四课",
+      "竖弯",
+      "vertical curve"
+    ],
+    [
+      "第五课",
+      "竖折",
+      "vertical turning stroke"
+    ],
+    [
+      "第七课",
+      "竖提",
+      "vertical rising stroke"
+    ]
+  ],
+  "radicals": [
+    [
+      "第二课",
+      "亻",
+      "单人旁",
+      "person radical"
+    ],
+    [
+      "第二课",
+      "父",
+      "父字头",
+      "father radical/top"
+    ],
+    [
+      "第二课",
+      "女",
+      "女字旁",
+      "female radical"
+    ],
+    [
+      "第三课",
+      "氵",
+      "三点水",
+      "three-dot water radical"
+    ],
+    [
+      "第三课",
+      "禾",
+      "禾木旁",
+      "grain radical"
+    ],
+    [
+      "第三课",
+      "口",
+      "口字旁",
+      "mouth radical"
+    ],
+    [
+      "第四课",
+      "宀",
+      "宝盖头",
+      "roof radical"
+    ],
+    [
+      "第四课",
+      "扌",
+      "提手旁",
+      "hand radical"
+    ],
+    [
+      "第五课",
+      "艹",
+      "草字头",
+      "grass radical"
+    ],
+    [
+      "第五课",
+      "阝",
+      "左耳旁",
+      "left ear/city-mound radical"
+    ],
+    [
+      "第五课",
+      "老",
+      "老字头",
+      "old radical/top"
+    ],
+    [
+      "第五课",
+      "王",
+      "王字旁／斜玉旁",
+      "king/jade radical"
+    ],
+    [
+      "第六课",
+      "⺮",
+      "竹字头",
+      "bamboo radical/top"
+    ],
+    [
+      "第八课",
+      "足",
+      "足字旁",
+      "foot radical"
+    ],
+    [
+      "第九课",
+      "攵",
+      "折文",
+      "strike/folded-script radical"
+    ],
+    [
+      "第九课",
+      "米",
+      "米字旁",
+      "rice radical"
+    ],
+    [
+      "第九课",
+      "灬",
+      "四点底",
+      "four-dot fire radical"
+    ],
+    [
+      "第九课",
+      "讠",
+      "言字旁",
+      "speech radical"
+    ],
+    [
+      "第十课",
+      "土",
+      "提土旁",
+      "earth radical"
+    ],
+    [
+      "第十课",
+      "又",
+      "又字旁",
+      "again/right-hand radical"
+    ]
+  ]
+}

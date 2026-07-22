@@ -3,7 +3,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 import { seedDatabase } from "./seed.js";
-import { ensureUserAuthFields } from "./auth.js";
+import { ensureUserAuthFields, applyManagedUserCredentials, managedUserIds } from "./auth.js";
+import { ensureChineseContentShape, compactChineseStorage } from "./chineseContent.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,7 +43,8 @@ function emptyDb() {
       adaptiveLevels: 10,
       featureFlags: { rewards: true, achievements: true }
     },
-    auditEvents: []
+    auditEvents: [],
+    chineseContent: { packs: {}, p1TopicClusters: null }
   };
 }
 
@@ -56,6 +58,7 @@ function ensureDbShape(db) {
   db.rewardsCatalog = db.rewardsCatalog || [];
   db.rewardRedemptions = db.rewardRedemptions || [];
   db.auditEvents = db.auditEvents || [];
+  db.chineseContent = db.chineseContent || { packs: {}, p1TopicClusters: null };
   db.platformSettings = db.platformSettings || {
     subjects: ["Math", "Chinese", "English", "Science"],
     adaptiveLevels: 10,
@@ -128,6 +131,17 @@ function mergeArrayById(target = [], seed = [], idKey = "id") {
   return { items: [...target, ...missing], changed: true };
 }
 
+function syncManagedUsers(db) {
+  let changed = false;
+  for (const seedUser of seedDatabase.users) {
+    if (!managedUserIds.includes(seedUser.id)) continue;
+    const user = (db.users || []).find((entry) => entry.id === seedUser.id);
+    if (!user) continue;
+    if (applyManagedUserCredentials(user, seedUser)) changed = true;
+  }
+  return changed;
+}
+
 function mergeSeed(db) {
   const existingIds = new Set((db.questions || []).map((question) => question.id));
   const missingQuestions = seedDatabase.questions.filter((question) => !existingIds.has(question.id));
@@ -189,6 +203,8 @@ function mergeSeed(db) {
     }
   }
   if (ensureDbShape(db)) changed = true;
+  if (syncManagedUsers(db)) changed = true;
+  ensureChineseContentShape(db);
   if (seedDemoEvents(db)) changed = true;
   return changed;
 }
@@ -208,12 +224,13 @@ function supabaseRowToDb(data) {
     rewardsCatalog: data.rewards_catalog || data.rewardsCatalog || [],
     rewardRedemptions: data.reward_redemptions || data.rewardRedemptions || [],
     platformSettings: data.platform_settings || data.platformSettings || emptyDb().platformSettings,
-    auditEvents: data.audit_events || data.auditEvents || []
+    auditEvents: data.audit_events || data.auditEvents || [],
+    chineseContent: data.chinese_content || data.chineseContent || { packs: {}, p1TopicClusters: null }
   };
 }
 
-function dbToSupabaseRow(db) {
-  return {
+function dbToSupabaseRow(db, { includeChinese = false } = {}) {
+  const row = {
     id: "main",
     users: db.users,
     progress: db.progress,
@@ -231,6 +248,10 @@ function dbToSupabaseRow(db) {
     audit_events: db.auditEvents || [],
     updated_at: new Date().toISOString()
   };
+  if (includeChinese) {
+    row.chinese_content = db.chineseContent || { packs: {}, p1TopicClusters: null };
+  }
+  return row;
 }
 
 async function readServerlessDb() {
@@ -269,39 +290,143 @@ async function writeLocalDb(db) {
   await fs.writeFile(dataPath, JSON.stringify(db, null, 2));
 }
 
-async function readSupabaseDb() {
-  const { data, error } = await supabase.from("app_state").select("*").eq("id", "main").maybeSingle();
+const DB_CACHE_MS = 20_000;
+let supabaseDbCache = null;
+let supabaseDbCacheAt = 0;
+let supabaseChineseCache = null;
+let supabaseChineseCacheAt = 0;
+
+const SUPABASE_CORE_COLUMNS =
+  "id,users,progress,messages,questions,login_events,answer_events,achievements,goals,study_sessions,notifications,rewards_catalog,reward_redemptions,platform_settings,audit_events,updated_at";
+
+function invalidateSupabaseCache() {
+  supabaseDbCache = null;
+  supabaseDbCacheAt = 0;
+  supabaseChineseCache = null;
+  supabaseChineseCacheAt = 0;
+}
+
+async function readSupabaseDb({ includeChinese = false } = {}) {
+  const cached = includeChinese ? supabaseChineseCache : supabaseDbCache;
+  const cachedAt = includeChinese ? supabaseChineseCacheAt : supabaseDbCacheAt;
+  if (cached && Date.now() - cachedAt < DB_CACHE_MS) {
+    return cached;
+  }
+
+  let chineseSelected = includeChinese;
+  let select = chineseSelected ? `${SUPABASE_CORE_COLUMNS},chinese_content` : SUPABASE_CORE_COLUMNS;
+  let { data, error } = await supabase.from("app_state").select(select).eq("id", "main").maybeSingle();
+  if (error?.code === "42703" && chineseSelected) {
+    chineseSelected = false;
+    ({ data, error } = await supabase.from("app_state").select(SUPABASE_CORE_COLUMNS).eq("id", "main").maybeSingle());
+  }
   if (error) throw error;
 
   if (!data) {
     const db = structuredClone(seedDatabase);
     mergeSeed(db);
-    const { error: insertError } = await supabase.from("app_state").insert(dbToSupabaseRow(db));
+    db._chineseLoaded = includeChinese;
+    const { error: insertError } = await supabase.from("app_state").insert(dbToSupabaseRow(db, { includeChinese }));
     if (insertError) throw insertError;
+    if (includeChinese) {
+      supabaseChineseCache = db;
+      supabaseChineseCacheAt = Date.now();
+    } else {
+      supabaseDbCache = db;
+      supabaseDbCacheAt = Date.now();
+    }
     return db;
   }
 
   const db = supabaseRowToDb(data);
-
-  if (mergeSeed(db)) {
-    await writeSupabaseDb(db);
+  if (!chineseSelected) {
+    db.chineseContent = { packs: {}, p1TopicClusters: null };
+    db._chineseLoaded = false;
+  } else {
+    db._chineseLoaded = true;
+    if (compactChineseStorage(db.chineseContent)) {
+      await writeChineseDb(db);
+    }
   }
 
+  if (mergeSeed(db)) {
+    await writeSupabaseDb(db, { includeChinese: false });
+  }
+
+  if (includeChinese) {
+    supabaseChineseCache = db;
+    supabaseChineseCacheAt = Date.now();
+  } else {
+    supabaseDbCache = db;
+    supabaseDbCacheAt = Date.now();
+  }
   return db;
 }
 
-async function writeSupabaseDb(db) {
-  const { error } = await supabase.from("app_state").upsert(dbToSupabaseRow(db));
+async function writeSupabaseDb(db, { includeChinese = false } = {}) {
+  const row = dbToSupabaseRow(db, { includeChinese: includeChinese || db._chineseLoaded });
+  const { error } = await supabase.from("app_state").upsert(row);
   if (error) throw error;
+  invalidateSupabaseCache();
+  if (includeChinese || db._chineseLoaded) {
+    supabaseChineseCache = db;
+    supabaseChineseCacheAt = Date.now();
+  }
 }
 
 export async function readDb() {
-  if (useSupabase) return readSupabaseDb();
+  if (useSupabase) return readSupabaseDb({ includeChinese: false });
+  return readLocalDb();
+}
+
+export async function readDbWithChinese() {
+  if (useSupabase) return readSupabaseDb({ includeChinese: true });
   return readLocalDb();
 }
 
 export async function writeDb(db) {
-  if (useSupabase) return writeSupabaseDb(db);
+  if (useSupabase) return writeSupabaseDb(db, { includeChinese: Boolean(db._chineseLoaded) });
+  return writeLocalDb(db);
+}
+
+export async function writeChineseDb(db, { includeAudit = false } = {}) {
+  db._chineseLoaded = true;
+  if (useSupabase) {
+    const update = {
+      chinese_content: db.chineseContent || { packs: {}, p1TopicClusters: null },
+      updated_at: new Date().toISOString()
+    };
+    if (includeAudit) update.audit_events = db.auditEvents || [];
+    const { error } = await supabase.from("app_state").update(update).eq("id", "main");
+    if (error) {
+      // Surface missing-column and other write failures so admin "Save" does not
+      // look successful when the new YouTube part never reached the database.
+      throw new Error(error.message || `Failed to save Chinese content (${error.code || "unknown"})`);
+    }
+    invalidateSupabaseCache();
+    return;
+  }
+  return writeLocalDb(db);
+}
+
+/** Persist platform_settings only (safe when chinese_content column is missing). */
+export async function writePlatformSettings(db, { includeAudit = false } = {}) {
+  if (useSupabase) {
+    const update = {
+      platform_settings: db.platformSettings || emptyDb().platformSettings,
+      updated_at: new Date().toISOString()
+    };
+    if (includeAudit) update.audit_events = db.auditEvents || [];
+    const { error } = await supabase.from("app_state").update(update).eq("id", "main");
+    if (error) throw new Error(error.message || `Failed to save settings (${error.code || "unknown"})`);
+    invalidateSupabaseCache();
+    // Keep in-memory chinese cache in sync when present.
+    if (supabaseChineseCache) {
+      supabaseChineseCache.platformSettings = db.platformSettings;
+      supabaseChineseCacheAt = Date.now();
+    }
+    return;
+  }
   return writeLocalDb(db);
 }
 

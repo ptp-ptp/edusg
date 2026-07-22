@@ -1,8 +1,8 @@
+import { getUserId } from "./authStorage.js";
+
 const apiBase = import.meta.env.VITE_API_BASE || "/api";
 
-export function getUserId() {
-  return localStorage.getItem("edusg-user-id") || "";
-}
+export { getUserId };
 
 export async function fetchJson(path, options = {}) {
   const userId = getUserId();

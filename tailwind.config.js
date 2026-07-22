@@ -16,7 +16,7 @@ export default {
         soft: "0 18px 60px rgba(23, 35, 60, 0.10)"
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Arial", "sans-serif"]
+        sans: ["Nunito", "ui-sans-serif", "system-ui", "Segoe UI", "Arial", "sans-serif"]
       }
     }
   },

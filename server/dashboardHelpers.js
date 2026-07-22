@@ -18,7 +18,7 @@ function subjectSummary(studentId, subject, db) {
       mastery: Math.min(100, words.length * 3),
       answered: words.length,
       studyMinutes: chinese.studyMinutes || 0,
-      nextAction: words.length ? "Review vocab" : "Start P1 words"
+      nextAction: words.length ? "Review vocab" : "Start 1A words"
     };
   }
   const data = progress[subject] || {};
@@ -206,6 +206,76 @@ export function checkAchievements(db, studentId, progress, subject) {
   if (student?.streak >= 7) add("week-streak", "7-Day Streak");
 
   return earned;
+}
+
+export function getTodayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+// Updates the daily activity streak. Consumes a streak freeze if a day was missed.
+export function touchDailyStreak(db, studentId) {
+  const student = db.users.find((u) => u.id === studentId);
+  if (!student) return null;
+
+  const today = getTodayKey();
+  if (student.lastStreakDay === today) {
+    return { streak: student.streak || 0, extended: false, freezeUsed: false };
+  }
+
+  const yesterday = getTodayKey(new Date(Date.now() - 86400000));
+  let freezeUsed = false;
+
+  if (student.lastStreakDay === yesterday) {
+    student.streak = (student.streak || 0) + 1;
+  } else if (student.lastStreakDay && (student.streakFreezes || 0) > 0) {
+    student.streakFreezes -= 1;
+    student.streak = (student.streak || 0) + 1;
+    freezeUsed = true;
+  } else {
+    student.streak = 1;
+  }
+
+  student.lastStreakDay = today;
+  return { streak: student.streak, extended: true, freezeUsed };
+}
+
+const DAILY_QUEST_TASKS = [
+  { id: "answer-5", title: "Answer 5 questions", target: 5, metric: "answered" },
+  { id: "correct-3", title: "Get 3 correct answers", target: 3, metric: "correct" },
+  { id: "subjects-2", title: "Practise 2 different subjects", target: 2, metric: "subjects" }
+];
+
+export const DAILY_QUEST_REWARD = 20;
+
+export function buildDailyQuest(db, studentId) {
+  const today = getTodayKey();
+  const todayEvents = (db.answerEvents || []).filter(
+    (event) => event.studentId === studentId && String(event.at || "").slice(0, 10) === today
+  );
+
+  const answered = todayEvents.length;
+  const correct = todayEvents.filter((event) => event.correct).length;
+  const subjects = new Set(todayEvents.map((event) => event.subject)).size;
+  const metrics = { answered, correct, subjects };
+
+  const tasks = DAILY_QUEST_TASKS.map((task) => ({
+    id: task.id,
+    title: task.title,
+    target: task.target,
+    progress: Math.min(task.target, metrics[task.metric] || 0),
+    done: (metrics[task.metric] || 0) >= task.target
+  }));
+
+  const student = db.users.find((u) => u.id === studentId);
+  const claimed = Boolean(student?.dailyQuestClaims?.[today]);
+
+  return {
+    date: today,
+    tasks,
+    complete: tasks.every((task) => task.done),
+    claimed,
+    reward: DAILY_QUEST_REWARD
+  };
 }
 
 export function incrementStudyMinutes(db, studentId, subject, minutes = 2) {

@@ -1,0 +1,950 @@
+{
+  "name": "Crime Phrases Table Examples",
+  "phrases": [
+    {
+      "phrase": "见义勇为",
+      "english": "stand up for justice; act bravely for a righteous cause",
+      "chinese_explanation": "看见正义的事情，勇敢地去帮助别人。",
+      "examples": [
+        {
+          "zh": "林叔叔见义勇为，帮助警察抓住小偷。",
+          "en": "Uncle Lim bravely helped the police catch the thief."
+        },
+        {
+          "zh": "他见义勇为，救了一位老人。",
+          "en": "He bravely rescued an elderly person."
+        },
+        {
+          "zh": "我们应该学习见义勇为的精神。",
+          "en": "We should learn the spirit of standing up for justice."
+        },
+        {
+          "zh": "他因为见义勇为受到大家的表扬。",
+          "en": "He was praised by everyone for his bravery."
+        },
+        {
+          "zh": "见义勇为是值得我们学习的美德。",
+          "en": "Standing up for justice is a virtue worth learning."
+        }
+      ]
+    },
+    {
+      "phrase": "风驰电掣",
+      "english": "as fast as lightning; extremely fast",
+      "chinese_explanation": "形容速度非常快，像风和闪电一样迅速。",
+      "examples": [
+        {
+          "zh": "警车风驰电掣地赶到现场。",
+          "en": "The police car arrived at the scene extremely quickly."
+        },
+        {
+          "zh": "救护车风驰电掣地开来。",
+          "en": "The ambulance came speeding like lightning."
+        },
+        {
+          "zh": "他风驰电掣地跑向终点。",
+          "en": "He ran towards the finish line at great speed."
+        },
+        {
+          "zh": "消防车风驰电掣地赶往火场。",
+          "en": "The fire engine rushed to the fire scene at lightning speed."
+        },
+        {
+          "zh": "小狗风驰电掣地追着球跑。",
+          "en": "The puppy chased the ball very quickly."
+        }
+      ]
+    },
+    {
+      "phrase": "形迹可疑",
+      "english": "suspicious; acting suspiciously",
+      "chinese_explanation": "举动和神色令人怀疑。",
+      "examples": [
+        {
+          "zh": "那名男子形迹可疑，我们要小心。",
+          "en": "That man looks suspicious, so we must be careful."
+        },
+        {
+          "zh": "保安发现一个形迹可疑的人在商场里徘徊。",
+          "en": "The security guard noticed a suspicious person wandering in the mall."
+        },
+        {
+          "zh": "警察一直观察那个形迹可疑的男子。",
+          "en": "The police kept watching the suspicious man."
+        },
+        {
+          "zh": "他东张西望，形迹可疑。",
+          "en": "He kept looking around and appeared suspicious."
+        },
+        {
+          "zh": "老师发现校门外有一个形迹可疑的陌生人。",
+          "en": "The teacher saw a suspicious stranger outside the school gate."
+        }
+      ]
+    },
+    {
+      "phrase": "魂飞魄散",
+      "english": "terrified; scared out of one's wits",
+      "chinese_explanation": "形容非常害怕，惊恐万分。",
+      "examples": [
+        {
+          "zh": "小偷看到警察，吓得魂飞魄散。",
+          "en": "The thief was terrified when he saw the police."
+        },
+        {
+          "zh": "她听到巨响，吓得魂飞魄散。",
+          "en": "She was scared out of her wits by the loud noise."
+        },
+        {
+          "zh": "孩子差点被车撞到，妈妈吓得魂飞魄散。",
+          "en": "The mother was terrified when her child almost got hit by a car."
+        },
+        {
+          "zh": "地震发生时，人们吓得魂飞魄散。",
+          "en": "People were terrified when the earthquake happened."
+        },
+        {
+          "zh": "他差点跌下楼梯，吓得魂飞魄散。",
+          "en": "He was frightened out of his wits when he almost fell down the stairs."
+        }
+      ]
+    },
+    {
+      "phrase": "拔腿就跑",
+      "english": "run away immediately; take to one's heels",
+      "chinese_explanation": "马上跑开，形容动作很快。",
+      "examples": [
+        {
+          "zh": "小偷抢了包后，拔腿就跑。",
+          "en": "The thief ran away immediately after snatching the bag."
+        },
+        {
+          "zh": "小猫看到大狗，拔腿就跑。",
+          "en": "The kitten ran away immediately when it saw the big dog."
+        },
+        {
+          "zh": "听见雷声，他拔腿就跑回家。",
+          "en": "He ran home immediately after hearing the thunder."
+        },
+        {
+          "zh": "学生快迟到了，拔腿就跑进教室。",
+          "en": "The student ran into the classroom quickly because he was almost late."
+        },
+        {
+          "zh": "老鼠看到猫，拔腿就跑。",
+          "en": "The mouse ran away immediately when it saw the cat."
+        }
+      ]
+    },
+    {
+      "phrase": "贼头贼脑",
+      "english": "sneaky; shifty-looking",
+      "chinese_explanation": "形容举动偷偷摸摸，不光明正大。",
+      "examples": [
+        {
+          "zh": "那个人贼头贼脑，看起来不像好人。",
+          "en": "That person looked sneaky and did not seem like a good person."
+        },
+        {
+          "zh": "他一直东张西望，贼头贼脑。",
+          "en": "He kept looking around sneakily."
+        },
+        {
+          "zh": "保安注意到一个贼头贼脑的人。",
+          "en": "The security guard noticed a sneaky person."
+        },
+        {
+          "zh": "小偷贼头贼脑地靠近那位女士。",
+          "en": "The thief sneaked towards the lady."
+        },
+        {
+          "zh": "他鬼鬼祟祟，贼头贼脑，令人怀疑。",
+          "en": "He acted sneakily and suspiciously."
+        }
+      ]
+    },
+    {
+      "phrase": "目不转睛",
+      "english": "stare without blinking; look attentively",
+      "chinese_explanation": "眼睛一动不动地看，形容非常专心。",
+      "examples": [
+        {
+          "zh": "小朋友目不转睛地看魔术表演。",
+          "en": "The children watched the magic show attentively."
+        },
+        {
+          "zh": "全班同学目不转睛地看着老师做实验。",
+          "en": "The whole class watched the teacher do the experiment attentively."
+        },
+        {
+          "zh": "我目不转睛地看着精彩的比赛。",
+          "en": "I watched the exciting match without taking my eyes off it."
+        },
+        {
+          "zh": "妹妹目不转睛地看动画片。",
+          "en": "My younger sister stared at the cartoon attentively."
+        },
+        {
+          "zh": "大家目不转睛地看着美丽的烟花。",
+          "en": "Everyone watched the beautiful fireworks attentively."
+        }
+      ]
+    },
+    {
+      "phrase": "触犯法律",
+      "english": "break the law; violate the law",
+      "chinese_explanation": "做违法的事情。",
+      "examples": [
+        {
+          "zh": "小偷偷东西，已经触犯法律。",
+          "en": "The thief broke the law by stealing."
+        },
+        {
+          "zh": "每个人都不能触犯法律。",
+          "en": "No one should break the law."
+        },
+        {
+          "zh": "酒后驾驶会触犯法律。",
+          "en": "Drunk driving breaks the law."
+        },
+        {
+          "zh": "偷东西是触犯法律的行为。",
+          "en": "Stealing is an act that violates the law."
+        },
+        {
+          "zh": "我们要遵守法律，不要触犯法律。",
+          "en": "We must obey the law and not break it."
+        }
+      ]
+    },
+    {
+      "phrase": "拔刀相助",
+      "english": "come to someone’s aid; help bravely",
+      "chinese_explanation": "看见别人有困难或受欺负时，主动帮助。",
+      "examples": [
+        {
+          "zh": "林叔叔拔刀相助，帮女士追回了包。",
+          "en": "Uncle Lim came to the lady’s aid and helped recover her bag."
+        },
+        {
+          "zh": "路人拔刀相助，救了受伤的孩子。",
+          "en": "A passer-by came forward to help the injured child."
+        },
+        {
+          "zh": "同学跌倒时，他马上拔刀相助。",
+          "en": "He immediately helped when his classmate fell down."
+        },
+        {
+          "zh": "我们要学习拔刀相助的精神。",
+          "en": "We should learn the spirit of helping others bravely."
+        },
+        {
+          "zh": "他拔刀相助，因此受到大家感谢。",
+          "en": "He helped bravely and was thanked by everyone."
+        }
+      ]
+    },
+    {
+      "phrase": "擦肩而过",
+      "english": "brush past; pass by closely",
+      "chinese_explanation": "肩膀几乎碰到肩膀地经过；也可指错过机会。",
+      "examples": [
+        {
+          "zh": "小偷和女士擦肩而过时，抢走了她的包。",
+          "en": "The thief snatched the lady’s bag as he brushed past her."
+        },
+        {
+          "zh": "我们在人群中擦肩而过，却没有发现彼此。",
+          "en": "We brushed past each other in the crowd without noticing."
+        },
+        {
+          "zh": "他与好机会擦肩而过，感到很可惜。",
+          "en": "He missed a good opportunity and felt regretful."
+        },
+        {
+          "zh": "两辆车擦肩而过，十分危险。",
+          "en": "The two cars passed very close to each other, which was dangerous."
+        },
+        {
+          "zh": "我差一点就和老师擦肩而过。",
+          "en": "I almost brushed past my teacher."
+        }
+      ]
+    },
+    {
+      "phrase": "失而复得",
+      "english": "lost and found again; recovered after being lost",
+      "chinese_explanation": "失去后又重新得到。",
+      "examples": [
+        {
+          "zh": "钱包失而复得，女士非常高兴。",
+          "en": "The lady was very happy when her lost wallet was recovered."
+        },
+        {
+          "zh": "我的手机失而复得，真是太幸运了。",
+          "en": "My lost phone was found again; I was very lucky."
+        },
+        {
+          "zh": "书本失而复得后，我松了一口气。",
+          "en": "I breathed a sigh of relief after my lost book was found."
+        },
+        {
+          "zh": "小狗失而复得，全家人都很开心。",
+          "en": "The whole family was happy when the lost puppy was found again."
+        },
+        {
+          "zh": "证件终于失而复得，他喜出望外。",
+          "en": "He was pleasantly surprised when his lost document was recovered."
+        }
+      ]
+    },
+    {
+      "phrase": "逃之夭夭",
+      "english": "escape quickly; run away",
+      "chinese_explanation": "偷偷或很快地逃跑。",
+      "examples": [
+        {
+          "zh": "小偷抢了包后，想逃之夭夭。",
+          "en": "The thief wanted to run away after snatching the bag."
+        },
+        {
+          "zh": "狐狸看到猎人，立刻逃之夭夭。",
+          "en": "The fox ran away immediately when it saw the hunter."
+        },
+        {
+          "zh": "看见老师走来，他逃之夭夭。",
+          "en": "He ran away when he saw the teacher coming."
+        },
+        {
+          "zh": "骗子骗了钱后逃之夭夭。",
+          "en": "The cheat ran away after taking the money."
+        },
+        {
+          "zh": "犯人想逃之夭夭，却被警察抓住了。",
+          "en": "The criminal tried to escape but was caught by the police."
+        }
+      ]
+    },
+    {
+      "phrase": "空无一人",
+      "english": "completely empty; not a single person",
+      "chinese_explanation": "一个人也没有。",
+      "examples": [
+        {
+          "zh": "放学后，教室里空无一人。",
+          "en": "After school, there was no one in the classroom."
+        },
+        {
+          "zh": "比赛结束后，操场空无一人。",
+          "en": "After the match, the field was completely empty."
+        },
+        {
+          "zh": "清晨的公园空无一人。",
+          "en": "The park was empty in the early morning."
+        },
+        {
+          "zh": "商店关门后，里面空无一人。",
+          "en": "After the shop closed, there was no one inside."
+        },
+        {
+          "zh": "深夜的街道空无一人。",
+          "en": "The street was empty late at night."
+        }
+      ]
+    },
+    {
+      "phrase": "束手就擒",
+      "english": "surrender without resistance; be caught without struggle",
+      "chinese_explanation": "不反抗，乖乖地被抓住。",
+      "examples": [
+        {
+          "zh": "小偷被警察包围，只好束手就擒。",
+          "en": "The thief was surrounded by the police and had to surrender."
+        },
+        {
+          "zh": "犯人终于束手就擒。",
+          "en": "The criminal finally surrendered."
+        },
+        {
+          "zh": "警察赶到后，坏人束手就擒。",
+          "en": "After the police arrived, the bad guy gave himself up."
+        },
+        {
+          "zh": "小偷知道跑不了，只好束手就擒。",
+          "en": "The thief knew he could not escape and had to surrender."
+        },
+        {
+          "zh": "在大家的帮助下，抢匪最终束手就擒。",
+          "en": "With everyone’s help, the robber was finally caught."
+        }
+      ]
+    },
+    {
+      "phrase": "机智勇敢",
+      "english": "clever and brave",
+      "chinese_explanation": "聪明灵活，又有勇气。",
+      "examples": [
+        {
+          "zh": "小乐机智勇敢，帮助阿姨抓住了小偷。",
+          "en": "Xiaole was clever and brave, helping the auntie catch the thief."
+        },
+        {
+          "zh": "她机智勇敢地救了妹妹。",
+          "en": "She cleverly and bravely saved her younger sister."
+        },
+        {
+          "zh": "消防员机智勇敢，救出了被困的人。",
+          "en": "The firefighters were clever and brave and rescued the trapped people."
+        },
+        {
+          "zh": "他机智勇敢地报警。",
+          "en": "He cleverly and bravely called the police."
+        },
+        {
+          "zh": "我们要做一个机智勇敢的孩子。",
+          "en": "We should be clever and brave children."
+        }
+      ]
+    },
+    {
+      "phrase": "东张西望",
+      "english": "look around",
+      "chinese_explanation": "四处看，常表示不专心或可疑。",
+      "examples": [
+        {
+          "zh": "小偷东张西望，让人觉得很可疑。",
+          "en": "The thief was look around, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“东张西望”这个词，句子会更生动。",
+          "en": "Using “东张西望” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“东张西望”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “东张西望”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“东张西望”。",
+          "en": "The teacher reminded us to use “东张西望” correctly."
+        },
+        {
+          "zh": "他在口试中用“东张西望”来描述事情的经过。",
+          "en": "He used “东张西望” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "若无其事",
+      "english": "as if nothing happened",
+      "chinese_explanation": "好像没有发生任何事一样。",
+      "examples": [
+        {
+          "zh": "小偷若无其事，让人觉得很可疑。",
+          "en": "The thief was as if nothing happened, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“若无其事”这个词，句子会更生动。",
+          "en": "Using “若无其事” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“若无其事”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “若无其事”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“若无其事”。",
+          "en": "The teacher reminded us to use “若无其事” correctly."
+        },
+        {
+          "zh": "他在口试中用“若无其事”来描述事情的经过。",
+          "en": "He used “若无其事” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "神不知，鬼不觉",
+      "english": "without anyone noticing",
+      "chinese_explanation": "形容事情做得很隐秘，没有人知道。",
+      "examples": [
+        {
+          "zh": "小偷神不知，鬼不觉，让人觉得很可疑。",
+          "en": "The thief was without anyone noticing, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“神不知，鬼不觉”这个词，句子会更生动。",
+          "en": "Using “神不知，鬼不觉” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“神不知，鬼不觉”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “神不知，鬼不觉”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“神不知，鬼不觉”。",
+          "en": "The teacher reminded us to use “神不知，鬼不觉” correctly."
+        },
+        {
+          "zh": "他在口试中用“神不知，鬼不觉”来描述事情的经过。",
+          "en": "He used “神不知，鬼不觉” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "蹑手蹑脚",
+      "english": "tiptoe quietly",
+      "chinese_explanation": "放轻脚步走路，怕被人发现或打扰别人。",
+      "examples": [
+        {
+          "zh": "小偷蹑手蹑脚，让人觉得很可疑。",
+          "en": "The thief was tiptoe quietly, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“蹑手蹑脚”这个词，句子会更生动。",
+          "en": "Using “蹑手蹑脚” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“蹑手蹑脚”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “蹑手蹑脚”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“蹑手蹑脚”。",
+          "en": "The teacher reminded us to use “蹑手蹑脚” correctly."
+        },
+        {
+          "zh": "他在口试中用“蹑手蹑脚”来描述事情的经过。",
+          "en": "He used “蹑手蹑脚” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "花容失色",
+      "english": "turn pale with fear",
+      "chinese_explanation": "形容女子受到惊吓，脸色大变。",
+      "examples": [
+        {
+          "zh": "小偷花容失色，让人觉得很可疑。",
+          "en": "The thief was turn pale with fear, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“花容失色”这个词，句子会更生动。",
+          "en": "Using “花容失色” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“花容失色”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “花容失色”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“花容失色”。",
+          "en": "The teacher reminded us to use “花容失色” correctly."
+        },
+        {
+          "zh": "他在口试中用“花容失色”来描述事情的经过。",
+          "en": "He used “花容失色” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "惊慌失措",
+      "english": "panic and lose composure",
+      "chinese_explanation": "非常慌张，不知道该怎么办。",
+      "examples": [
+        {
+          "zh": "小偷惊慌失措，让人觉得很可疑。",
+          "en": "The thief was panic and lose composure, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“惊慌失措”这个词，句子会更生动。",
+          "en": "Using “惊慌失措” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“惊慌失措”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “惊慌失措”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“惊慌失措”。",
+          "en": "The teacher reminded us to use “惊慌失措” correctly."
+        },
+        {
+          "zh": "他在口试中用“惊慌失措”来描述事情的经过。",
+          "en": "He used “惊慌失措” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "毫不犹豫",
+      "english": "without hesitation",
+      "chinese_explanation": "一点也不迟疑，马上去做。",
+      "examples": [
+        {
+          "zh": "小偷毫不犹豫，让人觉得很可疑。",
+          "en": "The thief was without hesitation, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“毫不犹豫”这个词，句子会更生动。",
+          "en": "Using “毫不犹豫” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“毫不犹豫”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “毫不犹豫”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“毫不犹豫”。",
+          "en": "The teacher reminded us to use “毫不犹豫” correctly."
+        },
+        {
+          "zh": "他在口试中用“毫不犹豫”来描述事情的经过。",
+          "en": "He used “毫不犹豫” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "三步并作两步",
+      "english": "rush forward quickly",
+      "chinese_explanation": "形容走得很快，很着急。",
+      "examples": [
+        {
+          "zh": "小偷三步并作两步，让人觉得很可疑。",
+          "en": "The thief was rush forward quickly, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“三步并作两步”这个词，句子会更生动。",
+          "en": "Using “三步并作两步” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“三步并作两步”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “三步并作两步”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“三步并作两步”。",
+          "en": "The teacher reminded us to use “三步并作两步” correctly."
+        },
+        {
+          "zh": "他在口试中用“三步并作两步”来描述事情的经过。",
+          "en": "He used “三步并作两步” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "九牛二虎之力",
+      "english": "great effort",
+      "chinese_explanation": "形容用了很大的力气。",
+      "examples": [
+        {
+          "zh": "小偷九牛二虎之力，让人觉得很可疑。",
+          "en": "The thief was great effort, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“九牛二虎之力”这个词，句子会更生动。",
+          "en": "Using “九牛二虎之力” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“九牛二虎之力”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “九牛二虎之力”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“九牛二虎之力”。",
+          "en": "The teacher reminded us to use “九牛二虎之力” correctly."
+        },
+        {
+          "zh": "他在口试中用“九牛二虎之力”来描述事情的经过。",
+          "en": "He used “九牛二虎之力” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "竖起大拇指",
+      "english": "give a thumbs up",
+      "chinese_explanation": "表示称赞或赞同。",
+      "examples": [
+        {
+          "zh": "小偷竖起大拇指，让人觉得很可疑。",
+          "en": "The thief was give a thumbs up, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“竖起大拇指”这个词，句子会更生动。",
+          "en": "Using “竖起大拇指” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“竖起大拇指”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “竖起大拇指”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“竖起大拇指”。",
+          "en": "The teacher reminded us to use “竖起大拇指” correctly."
+        },
+        {
+          "zh": "他在口试中用“竖起大拇指”来描述事情的经过。",
+          "en": "He used “竖起大拇指” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "激动万分",
+      "english": "extremely excited",
+      "chinese_explanation": "非常激动。",
+      "examples": [
+        {
+          "zh": "小偷激动万分，让人觉得很可疑。",
+          "en": "The thief was extremely excited, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“激动万分”这个词，句子会更生动。",
+          "en": "Using “激动万分” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“激动万分”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “激动万分”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“激动万分”。",
+          "en": "The teacher reminded us to use “激动万分” correctly."
+        },
+        {
+          "zh": "他在口试中用“激动万分”来描述事情的经过。",
+          "en": "He used “激动万分” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "挺身而出",
+      "english": "step forward bravely",
+      "chinese_explanation": "遇到困难或危险时勇敢站出来。",
+      "examples": [
+        {
+          "zh": "小偷挺身而出，让人觉得很可疑。",
+          "en": "The thief was step forward bravely, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“挺身而出”这个词，句子会更生动。",
+          "en": "Using “挺身而出” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“挺身而出”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “挺身而出”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“挺身而出”。",
+          "en": "The teacher reminded us to use “挺身而出” correctly."
+        },
+        {
+          "zh": "他在口试中用“挺身而出”来描述事情的经过。",
+          "en": "He used “挺身而出” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "热心助人",
+      "english": "warm-hearted and helpful",
+      "chinese_explanation": "热情地帮助别人。",
+      "examples": [
+        {
+          "zh": "小偷热心助人，让人觉得很可疑。",
+          "en": "The thief was warm-hearted and helpful, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“热心助人”这个词，句子会更生动。",
+          "en": "Using “热心助人” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“热心助人”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “热心助人”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“热心助人”。",
+          "en": "The teacher reminded us to use “热心助人” correctly."
+        },
+        {
+          "zh": "他在口试中用“热心助人”来描述事情的经过。",
+          "en": "He used “热心助人” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "乐于助人",
+      "english": "willing to help others",
+      "chinese_explanation": "喜欢帮助别人。",
+      "examples": [
+        {
+          "zh": "小偷乐于助人，让人觉得很可疑。",
+          "en": "The thief was willing to help others, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“乐于助人”这个词，句子会更生动。",
+          "en": "Using “乐于助人” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“乐于助人”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “乐于助人”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“乐于助人”。",
+          "en": "The teacher reminded us to use “乐于助人” correctly."
+        },
+        {
+          "zh": "他在口试中用“乐于助人”来描述事情的经过。",
+          "en": "He used “乐于助人” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "临危不惧",
+      "english": "stay calm in danger",
+      "chinese_explanation": "遇到危险也不害怕。",
+      "examples": [
+        {
+          "zh": "小偷临危不惧，让人觉得很可疑。",
+          "en": "The thief was stay calm in danger, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“临危不惧”这个词，句子会更生动。",
+          "en": "Using “临危不惧” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“临危不惧”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “临危不惧”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“临危不惧”。",
+          "en": "The teacher reminded us to use “临危不惧” correctly."
+        },
+        {
+          "zh": "他在口试中用“临危不惧”来描述事情的经过。",
+          "en": "He used “临危不惧” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "见义智为",
+      "english": "act wisely for justice",
+      "chinese_explanation": "看到正义的事，不但勇敢，也用聪明安全的方法去做。",
+      "examples": [
+        {
+          "zh": "小偷见义智为，让人觉得很可疑。",
+          "en": "The thief was act wisely for justice, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“见义智为”这个词，句子会更生动。",
+          "en": "Using “见义智为” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“见义智为”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “见义智为”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“见义智为”。",
+          "en": "The teacher reminded us to use “见义智为” correctly."
+        },
+        {
+          "zh": "他在口试中用“见义智为”来描述事情的经过。",
+          "en": "He used “见义智为” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "大惊失色",
+      "english": "turn pale in shock",
+      "chinese_explanation": "非常吃惊，脸色都变了。",
+      "examples": [
+        {
+          "zh": "小偷大惊失色，让人觉得很可疑。",
+          "en": "The thief was turn pale in shock, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“大惊失色”这个词，句子会更生动。",
+          "en": "Using “大惊失色” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“大惊失色”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “大惊失色”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“大惊失色”。",
+          "en": "The teacher reminded us to use “大惊失色” correctly."
+        },
+        {
+          "zh": "他在口试中用“大惊失色”来描述事情的经过。",
+          "en": "He used “大惊失色” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "心有余悸",
+      "english": "still frightened afterwards",
+      "chinese_explanation": "事情过后仍然感到害怕。",
+      "examples": [
+        {
+          "zh": "小偷心有余悸，让人觉得很可疑。",
+          "en": "The thief was still frightened afterwards, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“心有余悸”这个词，句子会更生动。",
+          "en": "Using “心有余悸” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“心有余悸”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “心有余悸”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“心有余悸”。",
+          "en": "The teacher reminded us to use “心有余悸” correctly."
+        },
+        {
+          "zh": "他在口试中用“心有余悸”来描述事情的经过。",
+          "en": "He used “心有余悸” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "喜出望外",
+      "english": "pleasantly surprised",
+      "chinese_explanation": "遇到意想不到的好事而特别高兴。",
+      "examples": [
+        {
+          "zh": "小偷喜出望外，让人觉得很可疑。",
+          "en": "The thief was pleasantly surprised, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“喜出望外”这个词，句子会更生动。",
+          "en": "Using “喜出望外” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“喜出望外”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “喜出望外”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“喜出望外”。",
+          "en": "The teacher reminded us to use “喜出望外” correctly."
+        },
+        {
+          "zh": "他在口试中用“喜出望外”来描述事情的经过。",
+          "en": "He used “喜出望外” in the oral exam to describe what happened."
+        }
+      ]
+    },
+    {
+      "phrase": "安然无恙",
+      "english": "safe and unharmed",
+      "chinese_explanation": "平安无事，没有受到伤害。",
+      "examples": [
+        {
+          "zh": "小偷安然无恙，让人觉得很可疑。",
+          "en": "The thief was safe and unharmed, which made people suspicious."
+        },
+        {
+          "zh": "作文中用上“安然无恙”这个词，句子会更生动。",
+          "en": "Using “安然无恙” in composition makes the sentence more vivid."
+        },
+        {
+          "zh": "看到这一幕，大家都想到了“安然无恙”这个词。",
+          "en": "Seeing this scene, everyone thought of the phrase “安然无恙”."
+        },
+        {
+          "zh": "老师提醒我们要正确使用“安然无恙”。",
+          "en": "The teacher reminded us to use “安然无恙” correctly."
+        },
+        {
+          "zh": "他在口试中用“安然无恙”来描述事情的经过。",
+          "en": "He used “安然无恙” in the oral exam to describe what happened."
+        }
+      ]
+    }
+  ]
+}

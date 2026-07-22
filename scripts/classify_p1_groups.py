@@ -1,9 +1,16 @@
 import json
 import os
+import sys
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-json_path = os.path.join(root, "src", "data", "chinese", "p1-words.json")
-groups_path = os.path.join(root, "src", "data", "chinese", "p1-practice-groups.json")
+tier = (sys.argv[1] if len(sys.argv) > 1 else "p1a").lower()
+if tier not in ("p1a", "p1b"):
+    raise SystemExit("Usage: python classify_p1_groups.py [p1a|p1b]")
+
+grade_code = "P1A" if tier == "p1a" else "P1B"
+semester = "Sem 1–2" if tier == "p1a" else "Sem 3–4"
+json_path = os.path.join(root, "src", "data", "chinese", f"{tier}-words.json")
+groups_path = os.path.join(root, "src", "data", "chinese", f"{tier}-practice-groups.json")
 
 # Character -> group (first matching group in PRIORITY wins)
 GROUP_PRIORITY = [
@@ -24,20 +31,25 @@ GROUP_PRIORITY = [
 
 CHAR_TO_GROUP = {
     "numbers": "一二三四五六七八九十两",
-    "colours": "白",
-    "family": "人爸妈父母哥弟姐妹爷儿女你我也他她老师徒",
-    "body": "耳牙口目舌手足心头身体男",
-    "animals": "鱼马羊鸟牛虫贝象",
+    "colours": "白红黑",
+    "family": "人爸妈父母哥弟姐妹爷儿女你我也他她老师徒友朋叔姨兄孩童",
+    "body": "耳牙口目舌手足心头身体男脸睛爪尾",
+    "animals": "鱼马羊鸟牛虫贝象鸡鸭狗猫兔虎狮",
     "nature": "水火山河雨云风雷电天地月日阳石土木禾米草花叶竹田苗瓜果",
-    "school": "书字笔画尺",
-    "objects": "衣刀网包伞车门床玩具井厂",
-    "actions": "吃看见问说话走跑飞来去开关哭笑站立",
-    "places": "家出在里上下",
-    "opposites": "大小多少长广好坏对古今正反有无没",
-    "time": "早午今",
+    "school": "书字笔画尺学校课写业习",
+    "objects": "衣刀网包伞车门床玩具井厂桌椅球图笔",
+    "actions": "吃看见问说话走跑飞来去开关哭笑站立洗刷抹放冲穿扫打听唱玩拍",
+    "places": "家出在里上下园场店房",
+    "opposites": "大小多少长短广好坏对古今正反有无没苦甜臭干湿轻重急弯圆尖短",
+    "time": "早午今昨晚明周末期",
     "grammar": (
         "的了吗也不什么可以以和合气是只把句个支条粒朵片点华文们又巴己它自"
-        "太安半奶玩具可去吗几"
+        "太安半奶玩具可去吗几同学前友坐高发起回末元饿饱喜欢用要请很泡变谢"
+        "这双那件服被还色都动作快收拾做事做甘买串选最抱拿办法切啊完账进净谁"
+        "声庆祝节爱国乐台讲故每因为给再认话组屋公校场商梯扶常步伙伴游兴戏"
+        "甲丁间边直周鸡饭鸭饼干采歌青菜汤香巾脸凉到先皮尺己好苦臭重生重喝汁"
+        "斤它办看户阿会写业账进净谁打听声昨星明爱给乐课台讲故每童因为兔短眼"
+        "睛尖物虎狮期带黑站叫认再孩组公校场商店梯扶常球步图习伙伴游拍兴戏"
     ),
 }
 
@@ -57,18 +69,29 @@ GROUP_META = [
     {"id": "grammar", "label": "Words & Grammar", "labelZh": "词语", "emoji": "💬", "hint": "Particles and measure words"},
 ]
 
-LESSON_SUBGROUPS = [
-    {"id": "lesson-1", "lesson": "第一课", "label": "Lesson 1", "labelZh": "第一课", "emoji": "1️⃣"},
-    {"id": "lesson-2", "lesson": "第二课", "label": "Lesson 2", "labelZh": "第二课", "emoji": "2️⃣"},
-    {"id": "lesson-3", "lesson": "第三课", "label": "Lesson 3", "labelZh": "第三课", "emoji": "3️⃣"},
-    {"id": "lesson-4", "lesson": "第四课", "label": "Lesson 4", "labelZh": "第四课", "emoji": "4️⃣"},
-    {"id": "lesson-5", "lesson": "第五课", "label": "Lesson 5", "labelZh": "第五课", "emoji": "5️⃣"},
-    {"id": "lesson-6", "lesson": "第六课", "label": "Lesson 6", "labelZh": "第六课", "emoji": "6️⃣"},
-    {"id": "lesson-7", "lesson": "第七课", "label": "Lesson 7", "labelZh": "第七课", "emoji": "7️⃣"},
-    {"id": "lesson-8", "lesson": "第八课", "label": "Lesson 8", "labelZh": "第八课", "emoji": "8️⃣"},
-    {"id": "lesson-9", "lesson": "第九课", "label": "Lesson 9", "labelZh": "第九课", "emoji": "9️⃣"},
-    {"id": "lesson-10", "lesson": "第十课", "label": "Lesson 10", "labelZh": "第十课", "emoji": "🔟"},
-]
+LESSON_EMOJI = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟", "1️⃣1️⃣", "1️⃣2️⃣", "1️⃣3️⃣", "1️⃣4️⃣", "1️⃣5️⃣", "1️⃣6️⃣", "1️⃣7️⃣", "1️⃣8️⃣", "1️⃣9️⃣", "2️⃣0️⃣"]
+
+
+def build_lesson_subgroups(words):
+    seen = []
+    for entry in words:
+        lesson = entry["lesson"]
+        if lesson not in seen:
+            seen.append(lesson)
+
+    subgroups = []
+    for index, lesson in enumerate(seen, start=1):
+        emoji = LESSON_EMOJI[index - 1] if index - 1 < len(LESSON_EMOJI) else "📘"
+        subgroups.append(
+            {
+                "id": f"lesson-{index}",
+                "lesson": lesson,
+                "label": f"Lesson {index}",
+                "labelZh": lesson,
+                "emoji": emoji,
+            }
+        )
+    return subgroups
 
 CHAR_SETS = {gid: set(chars) for gid, chars in CHAR_TO_GROUP.items()}
 
@@ -95,24 +118,22 @@ for entry in data["words"]:
         entry["group"] = classify_char(chars[0])
 
 theme_groups = {g["id"]: {**g, "wordKeys": []} for g in GROUP_META}
-lesson_groups = {g["id"]: {**g, "wordKeys": []} for g in LESSON_SUBGROUPS}
+lesson_subgroups = build_lesson_subgroups(data["words"])
+lesson_groups = {g["id"]: {**g, "wordKeys": []} for g in lesson_subgroups}
 
 for entry in data["words"]:
     key = entry_key(entry)
     theme_groups[entry["group"]]["wordKeys"].append(key)
-    lesson_id = next((g["id"] for g in LESSON_SUBGROUPS if g["lesson"] == entry["lesson"]), None)
+    lesson_id = next((g["id"] for g in lesson_subgroups if g["lesson"] == entry["lesson"]), None)
     if lesson_id:
         lesson_groups[lesson_id]["wordKeys"].append(key)
 
 thematic = [theme_groups[g["id"]] for g in GROUP_META if theme_groups[g["id"]]["wordKeys"]]
-lesson_list = [lesson_groups[g["id"]] for g in LESSON_SUBGROUPS if lesson_groups[g["id"]]["wordKeys"]]
+lesson_list = [lesson_groups[g["id"]] for g in lesson_subgroups if lesson_groups[g["id"]]["wordKeys"]]
 
 output = {
-    "grade": "P1",
-    "practiceModes": [
-        {"id": "all", "label": "All To Learn", "hint": "Every word not yet remembered"},
-        {"id": "group", "label": "By Group", "hint": "Pick a theme or lesson"}
-    ],
+    "grade": grade_code,
+    "semester": semester,
     "themeGroups": thematic,
     "lessonGroups": lesson_list
 }
@@ -125,3 +146,5 @@ with open(groups_path, "w", encoding="utf-8") as f:
 
 for g in thematic:
     print(f"{g['id']}: {len(g['wordKeys'])}")
+print(f"lessons: {len(lesson_list)}")
+print(f"words: {len(data['words'])}")

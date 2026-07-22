@@ -1,12 +1,18 @@
 import json
 import os
 import re
+import sys
 
 from pypinyin import Style, pinyin
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-json_path = os.path.join(root, "src", "data", "chinese", "p1-words.json")
-html_path = os.path.join(root, "Chinese", "P1_words.html")
+tier = (sys.argv[1] if len(sys.argv) > 1 else "p1a").lower()
+if tier not in ("p1a", "p1b"):
+    raise SystemExit("Usage: python add_pinyin.py [p1a|p1b]")
+
+json_path = os.path.join(root, "src", "data", "chinese", f"{tier}-words.json")
+html_name = "P1_words.html" if tier == "p1a" else "P1B_words.html"
+html_path = os.path.join(root, "Chinese", html_name)
 
 with open(json_path, encoding="utf-8") as f:
     data = json.load(f)

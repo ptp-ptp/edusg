@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpenText, ChevronRight, FlaskConical, Languages, LogIn, Sigma, Star, Zap } from "lucide-react";
-import { fetchJson } from "../../lib/api";
+import { fetchJson, cx } from "../../lib/api";
 import { useSession } from "../../context/SessionContext";
 import {
   ActivityFeed,
@@ -12,6 +12,8 @@ import {
   SubjectProgressCard,
   TrendSparkline
 } from "../../components/shared/DashboardWidgets";
+import DailyQuestCard from "../../components/shared/DailyQuestCard";
+import Ollie from "../../components/shared/Ollie";
 
 const subjectColors = {
   Math: "bg-teal",
@@ -28,13 +30,14 @@ const guestSubjects = [
 ];
 
 export default function StudentHome() {
-  const { session } = useSession();
+  const { session, role, openLogin } = useSession();
   const navigate = useNavigate();
+  const isStudentView = Boolean(session) && role === "student";
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(Boolean(session));
+  const [loading, setLoading] = useState(isStudentView);
 
   useEffect(() => {
-    if (!session) {
+    if (!isStudentView) {
       setLoading(false);
       return;
     }
@@ -42,25 +45,43 @@ export default function StudentHome() {
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [session]);
+  }, [isStudentView]);
 
-  if (!session) {
+  if (!isStudentView) {
     return (
       <div className="space-y-6" data-testid="student-guest-home">
         <section className="rounded-lg bg-gradient-to-r from-ink via-teal to-leaf p-5 text-white shadow-lg md:p-6">
-          <div className="text-sm font-bold text-white/80">MOE-aligned practice</div>
-          <h1 className="mt-1 text-2xl font-black md:text-3xl">Welcome to EduSG</h1>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-bold text-white/80">MOE-aligned practice</div>
+              <h1 className="mt-1 text-2xl font-black md:text-3xl">Welcome to EduSG</h1>
+            </div>
+            <Ollie mood="happy" size={64} className="shrink-0" />
+          </div>
           <p className="mt-3 max-w-2xl text-sm font-semibold text-white/90">
-            Explore Math, Science, English and Chinese right away. Sign in when you want to save progress, stars and streaks.
+            {session
+              ? "You are browsing the learning hub. Head back to your dashboard to see your child's progress."
+              : "Explore Math, Science, English and Chinese right away. Sign in when you want to save progress, stars and streaks."}
           </p>
-          <button
-            type="button"
-            onClick={() => navigate("/login")}
-            className="mt-5 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2.5 text-sm font-black text-teal"
-          >
-            <LogIn className="h-4 w-4" />
-            Login or register
-          </button>
+          {session ? (
+            <button
+              type="button"
+              onClick={() => navigate(role === "admin" ? "/admin" : "/parent")}
+              className="mt-5 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2.5 text-sm font-black text-teal"
+            >
+              Go to {role === "admin" ? "admin console" : "parent dashboard"}
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={openLogin}
+              className="mt-5 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2.5 text-sm font-black text-teal"
+            >
+              <LogIn className="h-4 w-4" />
+              Login or register
+            </button>
+          )}
         </section>
 
         <section>
@@ -95,18 +116,25 @@ export default function StudentHome() {
 
   return (
     <div className="space-y-6" data-testid="student-dashboard-home">
-      <section className="rounded-lg bg-gradient-to-r from-ink via-teal to-leaf p-5 text-white shadow-lg md:p-6">
-        <div className="text-sm font-bold text-white/80">{data.greeting}</div>
-        <h1 className="mt-1 text-2xl font-black md:text-3xl">{student.name.split(" ")[0]}!</h1>
+      <section className="pop-in rounded-lg bg-gradient-to-r from-ink via-teal to-leaf p-5 text-white shadow-lg md:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-sm font-bold text-white/80">{data.greeting}</div>
+            <h1 className="mt-1 text-2xl font-black md:text-3xl">{student.name.split(" ")[0]}!</h1>
+          </div>
+          <Ollie mood="happy" size={64} className="shrink-0" />
+        </div>
         <div className="mt-4 flex flex-wrap gap-4">
-          <span className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-sm font-black">
-            <Zap className="h-4 w-4" /> {student.streak} day streak
+          <span className={cx("flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-sm font-black", (student.streak || 0) >= 3 && "flame-hot")}>
+            <Zap className="h-4 w-4 fill-current" /> {student.streak} day streak
           </span>
           <span className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-sm font-black">
-            <Star className="h-4 w-4" /> {student.stars} stars
+            <Star className="h-4 w-4 fill-current" /> {student.stars} stars
           </span>
         </div>
       </section>
+
+      <DailyQuestCard />
 
       <section className="rounded-lg border border-teal/20 bg-teal/5 p-4">
         <div className="text-xs font-black uppercase text-teal">Continue learning</div>

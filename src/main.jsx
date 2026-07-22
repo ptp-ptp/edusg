@@ -32,6 +32,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Star,
+  Search,
   Target,
   Trophy,
   Upload,
@@ -42,12 +43,24 @@ import {
   Zap
 } from "lucide-react";
 import ChineseVocabPractice from "./ChineseVocabPractice";
+import { ChineseHeaderGrades, ChinesePathwayPicker } from "./components/chinese/ChineseGradePicker.jsx";
+import { MathHeaderGrades } from "./components/math/MathGradePicker.jsx";
+import MathLessonCard from "./components/math/MathLessonCard.jsx";
+import { hasMathLesson, listMathLessonKeys } from "./data/math/index.js";
+import { filterMathTopicGroups, isMoeMathTopic } from "./utils/mathTopics.js";
 import EnglishLearningPractice from "./EnglishLearningPractice";
-import { chineseCurriculum, mathCurriculum, scienceCurriculum } from "./curriculum";
+import ChineseRoadmap from "./components/chinese/ChineseRoadmap.jsx";
+import GradePicker from "./components/shared/GradePicker.jsx";
+import { mathCurriculum, scienceCurriculum } from "./curriculum";
 import "./index.css";
 import { useSession } from "./context/SessionContext.jsx";
+import { useCelebration } from "./components/shared/Celebration.jsx";
+import Ollie from "./components/shared/Ollie.jsx";
+import StudentProfileModal from "./components/shared/StudentProfileModal.jsx";
+import ChineseContentAdmin from "./components/admin/ChineseContentAdmin.jsx";
 import { fetchJson, cx } from "./lib/api.js";
 import { getCachedQuestions, getEnglishQuestions, getMathQuestions, getScienceQuestions, prefetchPracticeQuestions } from "./lib/questionStore.js";
+import { buildChineseProgressView, pickChineseStrengthsAndFocus } from "./utils/chineseProgressStats.js";
 
 const roleOptions = ["student", "parent", "admin"];
 
@@ -55,6 +68,7 @@ const guestStudent = { name: "Guest", grade: "P4", streak: 0, stars: 0, avatar: 
 const guestProgress = {
   adaptiveLevel: 1,
   topicMastery: {},
+  completedLessons: [],
   correct: 0,
   answered: 0,
   correctStreak: 0,
@@ -94,7 +108,8 @@ function subjectFromParam(param) {
 }
 
 export function StudentLearningApp() {
-  const { session, setSession, role, login, loading: sessionLoading } = useSession();
+  const { session, setSession, role, login, loading: sessionLoading, openLogin } = useSession();
+  const { celebrateAnswerResult } = useCelebration();
   const navigate = useNavigate();
   const { subject: subjectParam } = useParams();
   const [question, setQuestion] = useState(null);
@@ -125,30 +140,44 @@ export function StudentLearningApp() {
   const [mathPracticeFeedback, setMathPracticeFeedback] = useState(null);
   const [scienceMode, setScienceMode] = useState("learn");
   const [scienceIndex, setScienceIndex] = useState(0);
-  const [chineseGrade, setChineseGrade] = useState("P1");
+  const [chineseP1Tiers, setChineseP1Tiers] = useState(["P1A"]);
+  const [chinesePathway, setChinesePathway] = useState("chinese");
   const [messageText, setMessageText] = useState("");
+  const [guestMathProgress, setGuestMathProgress] = useState(guestProgress);
   const mathLoadedRef = useRef(initialMathQuestions.length > 0);
   const scienceLoadedRef = useRef(initialScienceQuestions.length > 0);
   const englishLoadedRef = useRef(initialEnglishQuestions.length > 0);
 
   const isGuest = !session;
   const student = session?.student || guestStudent;
-  const progress = session?.progress || guestProgress;
+  const progress = session?.progress || guestMathProgress;
   const user = session?.user;
   const messages = session?.messages || [];
 
   function goToLogin() {
-    navigate("/login", { state: { from: { pathname: window.location.pathname } } });
+    openLogin();
   }
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState("learn");
   const [mountedSubjects, setMountedSubjects] = useState(() => ({ [subjectFromParam(subjectParam)]: true }));
+
+  function handleMathGradeChange(grade) {
+    setCurriculumGrade(grade);
+    setMathPracticeGrade(grade);
+    setMathPracticeTopic("");
+    setMathPracticeIndex(0);
+    setMathPracticeAnswer("");
+    setMathPracticeFeedback(null);
+  }
 
   useEffect(() => {
     if (subjectParam) {
       const label = subjectFromParam(subjectParam);
       setActiveSubject(label);
+      setMountedSubjects((current) => (current[label] ? current : { ...current, [label]: true }));
+      setMobileTab("learn");
     }
   }, [subjectParam]);
 
@@ -226,6 +255,7 @@ export function StudentLearningApp() {
       const accepted = [current.answer, ...(current.acceptedAnswers || [])].map(normalizeAnswer);
       const correct = accepted.includes(normalizeAnswer(scienceAnswer));
       setScienceFeedback({ correct, explanation: current.explanation, hint: current.hint });
+      celebrateAnswerResult({ isCorrect: correct }, { subject: "Science" });
       return;
     }
     fetchJson("/science/answer", {
@@ -237,12 +267,14 @@ export function StudentLearningApp() {
       })
     }).then((result) => {
       setScienceFeedback({ correct: result.isCorrect, explanation: result.explanation, hint: current.hint });
-      if (result.progress) {
-        setSession((currentSession) => ({
-          ...currentSession,
-          scienceProgress: result.progress
-        }));
-      }
+      celebrateAnswerResult(result, { subject: "Science" });
+      setSession((currentSession) => ({
+        ...currentSession,
+        scienceProgress: result.progress || currentSession.scienceProgress,
+        student: result.student
+          ? { ...currentSession.student, stars: result.student.stars, streak: result.student.streak }
+          : currentSession.student
+      }));
     });
   }
 
@@ -264,7 +296,14 @@ export function StudentLearningApp() {
         ...payload
       })
     });
-    setSession((current) => ({ ...current, englishProgress: result.progress }));
+    celebrateAnswerResult(result, { subject: "English" });
+    setSession((current) => ({
+      ...current,
+      englishProgress: result.progress,
+      student: result.student
+        ? { ...current.student, stars: result.student.stars, streak: result.student.streak }
+        : current.student
+    }));
     return result;
   }
 
@@ -282,25 +321,38 @@ export function StudentLearningApp() {
         answer: selectedAnswer
       })
     });
-    setSession((current) => ({ ...current, progress: result.progress }));
+    celebrateAnswerResult(result, { subject: "Math" });
+    setSession((current) => ({
+      ...current,
+      progress: result.progress,
+      student: result.student
+        ? { ...current.student, stars: result.student.stars, streak: result.student.streak }
+        : current.student
+    }));
     setFeedback(result);
     setQuestion(result.nextQuestion);
     setSelectedAnswer("");
   }
 
-  async function rememberChineseWord(wordKey) {
+  async function rememberChineseWord(wordKey, practiceMeta) {
     if (!session?.student?.id) {
       goToLogin();
-      return;
+      return null;
+    }
+    const body = {
+      studentId: session.student.id,
+      wordKey
+    };
+    if (practiceMeta && typeof practiceMeta.timeMs === "number" && typeof practiceMeta.correct === "boolean") {
+      body.timeMs = practiceMeta.timeMs;
+      body.correct = practiceMeta.correct;
     }
     const result = await fetchJson("/chinese/remember", {
       method: "POST",
-      body: JSON.stringify({
-        studentId: session.student.id,
-        wordKey
-      })
+      body: JSON.stringify(body)
     });
     setSession((current) => ({ ...current, chineseProgress: result.chineseProgress }));
+    return result;
   }
 
   async function sendMessage() {
@@ -321,6 +373,16 @@ export function StudentLearningApp() {
     setMessageText("");
   }
 
+  const chineseProgressView = useMemo(
+    () =>
+      buildChineseProgressView(session?.chineseProgress, {
+        grade: curriculumGrade,
+        pathway: chinesePathway,
+        p1Tiers: chineseP1Tiers
+      }),
+    [session?.chineseProgress, curriculumGrade, chinesePathway, chineseP1Tiers]
+  );
+
   if (sessionLoading) {
     return (
       <main className="grid min-h-screen place-items-center bg-cloud text-ink">
@@ -330,6 +392,8 @@ export function StudentLearningApp() {
   }
 
   const accuracy = Math.round((progress.correct / Math.max(progress.answered, 1)) * 100);
+  const sidebarProgress = activeSubject === "Chinese" ? chineseProgressView : progress;
+  const sidebarAccuracy = activeSubject === "Chinese" ? chineseProgressView.accuracy : accuracy;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-cloud text-ink">
@@ -342,6 +406,7 @@ export function StudentLearningApp() {
           profileClassName="absolute bottom-7 left-4 right-4"
           isGuest={isGuest}
           onLogin={goToLogin}
+          onViewProfile={() => setProfileOpen(true)}
         />
       </aside>
 
@@ -375,6 +440,10 @@ export function StudentLearningApp() {
               onRoleChange={isGuest ? null : login}
               isGuest={isGuest}
               onLogin={goToLogin}
+              onViewProfile={() => {
+                setMobileNavOpen(false);
+                setProfileOpen(true);
+              }}
             />
           </aside>
         </div>
@@ -419,14 +488,14 @@ export function StudentLearningApp() {
                 </button>
               ) : (
                 <>
-                  <span className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-black text-coral lg:hidden">
+                  <span className={cx("flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-black text-coral lg:hidden", (student.streak || 0) >= 3 && "flame-hot")}>
                     <Zap className="h-3.5 w-3.5 fill-current" />
-                    {student.streak || 12}
+                    {student.streak || 0}
                   </span>
                   <div className="hidden md:flex md:items-center md:gap-3">
-                    <RoleSwitch role={role} onChange={login} />
-                    <Stat icon={Zap} value={student.streak || 12} label="Day streak" color="text-coral" />
-                    <Stat icon={Star} value={student.stars || 2450} label="Stars" color="text-sun" />
+                    {activeSubject !== "Math" && <RoleSwitch role={role} onChange={login} />}
+                    <Stat icon={Zap} value={student.streak || 0} label="Day streak" color="text-coral" />
+                    <Stat icon={Star} value={student.stars || 0} label="Stars" color="text-sun" />
                   </div>
                   <button type="button" className="touch-target relative rounded-full border border-slate-200 bg-white p-2.5 shadow-sm">
                     <Bell className="h-5 w-5" />
@@ -438,11 +507,12 @@ export function StudentLearningApp() {
           </div>
         </header>
 
-        <div className="grid gap-4 px-4 pb-4 md:px-9 md:pb-8 xl:grid-cols-[1fr_320px]">
+        <div className={cx("grid gap-4 px-4 pb-4 md:px-9 md:pb-8", activeSubject !== "Chinese" && "xl:grid-cols-[1fr_320px]")}>
           <section className="min-w-0 space-y-4">
             <div className={cx(mobileTab === "learn" ? "block" : "hidden", "lg:block space-y-4")}>
               {mountedSubjects.Math && (
                 <div className={activeSubject === "Math" ? "block space-y-4" : "hidden"}>
+                  <MathHeaderGrades grade={curriculumGrade} setGrade={handleMathGradeChange} />
                   <MathLearningPractice
                     questions={mathQuestions}
                     progress={progress}
@@ -454,7 +524,7 @@ export function StudentLearningApp() {
                     mode={mathMode}
                     setMode={setMathMode}
                     grade={curriculumGrade}
-                    setGrade={setCurriculumGrade}
+                    setGrade={handleMathGradeChange}
                     practiceGrade={mathPracticeGrade}
                     setPracticeGrade={setMathPracticeGrade}
                     selectedTopic={mathPracticeTopic}
@@ -471,8 +541,15 @@ export function StudentLearningApp() {
                     studentId={session?.student?.id}
                     onProgressUpdate={
                       session
-                        ? (nextProgress) => setSession((current) => ({ ...current, progress: nextProgress }))
-                        : undefined
+                        ? (nextProgress, nextStudent) =>
+                            setSession((current) => ({
+                              ...current,
+                              progress: nextProgress,
+                              student: nextStudent
+                                ? { ...current.student, stars: nextStudent.stars, streak: nextStudent.streak }
+                                : current.student
+                            }))
+                        : (nextProgress) => setGuestMathProgress(nextProgress)
                     }
                     onLoginRequired={goToLogin}
                   />
@@ -500,10 +577,24 @@ export function StudentLearningApp() {
               )}
               {mountedSubjects.Chinese && (
                 <div className={activeSubject === "Chinese" ? "block space-y-4" : "hidden"}>
+                  <ChineseHeaderGrades
+                    grade={curriculumGrade}
+                    setGrade={setCurriculumGrade}
+                  />
+                  <ChinesePathwayPicker
+                    grade={curriculumGrade}
+                    pathway={chinesePathway}
+                    onPathwayChange={setChinesePathway}
+                  />
                   <ChineseVocabPractice
-                    grade={chineseGrade}
-                    setGrade={setChineseGrade}
+                    grade={curriculumGrade}
+                    setGrade={setCurriculumGrade}
+                    pathway={chinesePathway}
+                    p1Tiers={chineseP1Tiers}
+                    onP1TiersChange={setChineseP1Tiers}
                     rememberedWords={session?.chineseProgress?.rememberedWords || {}}
+                    wordTimes={session?.chineseProgress?.wordTimes || {}}
+                    timingSummary={session?.chineseProgress?.timingSummary}
                     onWordRemembered={rememberChineseWord}
                   />
                 </div>
@@ -545,6 +636,7 @@ export function StudentLearningApp() {
               <MobileProgressPanel
                 activeSubject={activeSubject}
                 progress={progress}
+                chineseProgressView={chineseProgressView}
                 mathQuestions={mathQuestions}
                 selectedMasteryTopic={selectedMasteryTopic}
                 setSelectedMasteryTopic={setSelectedMasteryTopic}
@@ -555,25 +647,21 @@ export function StudentLearningApp() {
               />
             </div>
 
-            <div className={cx("hidden lg:block space-y-4", activeSubject === "Math" && "lg:block")}>
-              {activeSubject === "Math" && (
-                <TopicMastery
-                  topics={progress.topicMastery}
-                  questions={mathQuestions}
-                  selectedTopic={selectedMasteryTopic}
-                  setSelectedTopic={setSelectedMasteryTopic}
-                />
-              )}
+            <div className={cx("hidden lg:block space-y-4", activeSubject === "Science" && "lg:block")}>
               {activeSubject === "Science" && (
                 <SyllabusRoadmap subject="Science" grade={curriculumGrade} setGrade={setCurriculumGrade} />
-              )}
-              {activeSubject === "Chinese" && (
-                <ChineseRoadmap grade={curriculumGrade} setGrade={setCurriculumGrade} />
               )}
             </div>
           </section>
 
-          <aside className={cx("min-w-0 space-y-4", mobileTab === "family" ? "block" : "hidden", "lg:block")} data-testid="mobile-family-panel">
+          <aside
+            className={cx(
+              "min-w-0 space-y-4",
+              mobileTab === "family" ? "block" : "hidden",
+              activeSubject === "Chinese" ? "lg:hidden" : "lg:block"
+            )}
+            data-testid="mobile-family-panel"
+          >
             {isGuest ? (
               <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 className="text-lg font-black">Save your progress</h2>
@@ -591,7 +679,12 @@ export function StudentLearningApp() {
               </div>
             ) : (
               <>
-                <ParentPanel accuracy={accuracy} progress={progress} />
+                <MyProgressPanel
+                  activeSubject={activeSubject}
+                  accuracy={sidebarAccuracy}
+                  progress={sidebarProgress}
+                  student={student}
+                />
                 <Messages
                   messages={messages}
                   user={user}
@@ -607,87 +700,96 @@ export function StudentLearningApp() {
 
         <MobileBottomNav activeTab={mobileTab} onChange={setMobileTab} />
       </main>
+      <StudentProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }
 
-function ChineseRoadmap({ grade, setGrade }) {
-  const [pathway, setPathway] = useState("chinese");
-  const selected = chineseCurriculum[grade];
-  const pathwayOptions = selected.pathways;
-  const currentPathway = pathwayOptions[pathway] ? pathway : "chinese";
-  const detail = pathwayOptions[currentPathway];
+function MathStatBox({ count, label, onClick, active }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "rounded-lg px-2 py-3 backdrop-blur transition sm:px-4",
+        active ? "bg-white text-teal ring-2 ring-white/80" : "bg-white/20 text-white hover:bg-white/30"
+      )}
+    >
+      <div className="text-xl font-black sm:text-2xl">{count}</div>
+      <div className="text-[10px] font-bold leading-tight sm:text-xs">{label}</div>
+    </button>
+  );
+}
+
+function MathProgressModal({ config, topicMastery, practiceGrade, onClose, onSelectTopic }) {
+  const { title, subtitle, topics } = config;
 
   useEffect(() => {
-    if (!chineseCurriculum[grade].pathways[pathway]) {
-      setPathway("chinese");
-    }
-  }, [grade, pathway]);
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="text-sm font-black text-coral">MOE Primary Chinese Roadmap</div>
-          <h2 className="mt-1 text-xl font-black">{grade} Chinese Language · 华文课程地图</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{selected.focus}</p>
-        </div>
-        <GradePicker grades={Object.keys(chineseCurriculum)} value={grade} onChange={setGrade} />
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {Object.entries(pathwayOptions).map(([id, option]) => (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[85vh] sm:rounded-2xl"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="math-progress-title"
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-5">
+          <div className="min-w-0">
+            <div className="text-xs font-black uppercase tracking-wide text-teal">{practiceGrade} Math</div>
+            <h3 id="math-progress-title" className="mt-1 text-xl font-black text-slate-800 sm:text-2xl">
+              {title}
+            </h3>
+            <p className="mt-1 text-sm font-semibold text-slate-500">{subtitle}</p>
+          </div>
           <button
-            key={id}
-            onClick={() => setPathway(id)}
-            className={cx(
-              "rounded-md border px-3 py-2 text-sm font-black transition",
-              currentPathway === id ? "border-coral bg-coral text-white" : "border-slate-200 bg-white text-slate-600 hover:border-coral"
-            )}
+            type="button"
+            onClick={onClose}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-slate-200 text-slate-600 hover:border-teal hover:text-teal"
+            aria-label="Close"
           >
-            {option.label}
+            <X className="h-5 w-5" />
           </button>
-        ))}
-      </div>
-
-      <div className="mt-5 grid gap-3 xl:grid-cols-[1fr_1.1fr]">
-        <div className="rounded-lg border border-slate-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-md bg-red-50 text-coral">
-              <Languages className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="font-black">{detail.label}</h3>
-              <p className="text-sm text-slate-500">{selected.stage}</p>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <MiniInfo title="Weekly time" value={detail.hours} />
-            <MiniInfo title="Characters" value={detail.characters} />
-          </div>
-          <div className="mt-4 rounded-md bg-slate-50 p-4">
-            <div className="font-black text-teal">Stage focus</div>
-            <ul className="mt-2 space-y-2 text-sm leading-6 text-slate-600">
-              {detail.focus.map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <ChineseTrackCard icon={BookOpenText} title="Topic clusters" items={selected.topicClusters} />
-          <ChineseTrackCard icon={MessageCircle} title="Classroom tasks" items={selected.tasks} />
-          <ChineseTrackCard icon={PenLine} title="Assessment ideas" items={selected.assessment} />
-          <ChineseTrackCard icon={Sparkles} title="Culture and ICT" items={selected.enrichment} />
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+          {topics.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm font-semibold text-slate-500">
+              No topics in this group yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {topics.map((topic) => {
+                const score = topicMastery[topic] || 0;
+                return (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => onSelectTopic?.(topic)}
+                    className="w-full rounded-lg border border-slate-200 p-3 text-left transition hover:border-teal"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 font-black text-slate-800">{topic}</div>
+                      <div className="shrink-0 text-sm font-black text-teal">{score}%</div>
+                    </div>
+                    <div className="mt-2 h-2 rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-teal" style={{ width: `${score}%` }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
-
-      <div className="mt-4 rounded-md border border-teal/20 bg-teal/5 p-4 text-sm leading-6 text-slate-600">
-        <span className="font-black text-teal">Source note:</span> Structured from MOE Singapore Primary Chinese Syllabus 2024. The syllabus is arranged by stages, pathways and skill outcomes, so EduSG turns those outcomes into level-ready planning tracks.
       </div>
     </div>
   );
@@ -722,7 +824,14 @@ function MathLearningPractice({
   onProgressUpdate,
   onLoginRequired
 }) {
-  const practiceGrades = ["P1", "P2", "P3", "P4", "P5", "P6"];
+  const { celebrateAnswerResult: celebrate } = useCelebration();
+  const [progressModal, setProgressModal] = useState(null);
+  const [masteryTopic, setMasteryTopic] = useState("");
+  const [mathLessonTopic, setMathLessonTopic] = useState("");
+  const [topicSearch, setTopicSearch] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const topicMastery = progress.topicMastery || {};
+  const masteryThreshold = 70;
   const topicGroups = useMemo(() => {
     const grouped = questions.filter((questionItem) => questionItem.grade === practiceGrade).reduce((items, questionItem) => {
       const topic = questionItem.topic || "General Practice";
@@ -747,15 +856,60 @@ function MathLearningPractice({
     return Object.values(grouped)
       .map((group) => ({
         ...group,
-        minLevel: Math.min(...group.levels),
-        maxLevel: Math.max(...group.levels),
+        minLevel: group.levels.length ? Math.min(...group.levels) : 1,
+        maxLevel: group.levels.length ? Math.max(...group.levels) : 1,
         difficulties: Array.from(group.difficulties),
         tracks: Array.from(group.tracks)
       }))
       .sort((a, b) => a.topic.localeCompare(b.topic));
   }, [questions, practiceGrade]);
 
-  const activeTopic = selectedTopic || topicGroups[0]?.topic || "";
+  const visibleTopicGroups = useMemo(
+    () => filterMathTopicGroups(topicGroups, { grade: practiceGrade, showAdvanced, search: topicSearch }),
+    [topicGroups, practiceGrade, showAdvanced, topicSearch]
+  );
+
+  const progressStats = useMemo(() => {
+    const topics = visibleTopicGroups.map((group) => group.topic);
+    const masteredTopics = topics.filter((topic) => (topicMastery[topic] || 0) >= masteryThreshold);
+    const toPracticeTopics = topics.filter((topic) => (topicMastery[topic] || 0) < masteryThreshold);
+    return {
+      topicCount: topics.length,
+      masteredCount: masteredTopics.length,
+      toPracticeCount: toPracticeTopics.length,
+      masteredTopics,
+      toPracticeTopics,
+      accuracy: Math.round((progress.correct / Math.max(progress.answered, 1)) * 100)
+    };
+  }, [visibleTopicGroups, topicMastery, progress.correct, progress.answered]);
+
+  const displayTopicMastery = useMemo(() => {
+    const merged = { ...topicMastery };
+    visibleTopicGroups.forEach((group) => {
+      if (!(group.topic in merged)) merged[group.topic] = 0;
+    });
+    return merged;
+  }, [topicMastery, visibleTopicGroups]);
+
+  const progressModalConfig = {
+    all: {
+      title: "All topics",
+      subtitle: `${progressStats.topicCount} topics in ${practiceGrade}`,
+      topics: visibleTopicGroups.map((group) => group.topic)
+    },
+    mastered: {
+      title: "Mastered",
+      subtitle: `${progressStats.masteredCount} topics at ${masteryThreshold}%+`,
+      topics: progressStats.masteredTopics
+    },
+    toPractice: {
+      title: "To practice",
+      subtitle: `${progressStats.toPracticeCount} topics still building`,
+      topics: progressStats.toPracticeTopics
+    }
+  };
+
+  const activeTopic = selectedTopic || visibleTopicGroups[0]?.topic || "";
   const topicQuestions = useMemo(() => {
     return questions.filter((questionItem) => {
       const topic = questionItem.topic || "General Practice";
@@ -766,16 +920,62 @@ function MathLearningPractice({
   const textOnlyCount = useMemo(() => questions.filter((questionItem) => !questionItem.imageUrl).length, [questions]);
   const isPracticeOpen = mode === "practice";
 
-  function chooseTopic(topic) {
+  const advanceLessonTopics = useMemo(() => {
+    return listMathLessonKeys()
+      .map((key) => key.split("|"))
+      .filter(([lessonGrade]) => lessonGrade === practiceGrade)
+      .map(([, topic]) => topic)
+      .filter((topic) => visibleTopicGroups.some((group) => group.topic === topic));
+  }, [practiceGrade, visibleTopicGroups]);
+
+  async function completeMathLesson(lessonKey) {
+    if (!studentId) {
+      onProgressUpdate?.({
+        ...progress,
+        completedLessons: [...new Set([...(progress.completedLessons || []), lessonKey])],
+        topicMastery: {
+          ...progress.topicMastery,
+          [lessonKey.split("|")[1] || ""]: Math.min(100, (progress.topicMastery?.[lessonKey.split("|")[1]] || 30) + 10)
+        }
+      });
+      return;
+    }
+    const result = await fetchJson("/math/lesson-complete", {
+      method: "POST",
+      body: JSON.stringify({ studentId, lessonKey })
+    });
+    if (result.progress) onProgressUpdate?.(result.progress);
+  }
+
+  function startTopicQuiz(topic) {
     setSelectedTopic(topic);
     setIndex(0);
     setAnswer("");
     setFeedback(null);
+    setMode("practice");
   }
 
-  function chooseGrade(nextGrade) {
-    setPracticeGrade(nextGrade);
-    setSelectedTopic("");
+  function openMathLesson(topic) {
+    setMathLessonTopic(topic);
+    setMasteryTopic(topic);
+  }
+
+  useEffect(() => {
+    if (!selectedTopic) return;
+    if (!visibleTopicGroups.some((group) => group.topic === selectedTopic)) {
+      setSelectedTopic(visibleTopicGroups[0]?.topic || "");
+      setIndex(0);
+      setAnswer("");
+      setFeedback(null);
+    }
+  }, [visibleTopicGroups, selectedTopic, setSelectedTopic, setIndex, setAnswer, setFeedback]);
+
+  useEffect(() => {
+    setTopicSearch("");
+  }, [practiceGrade]);
+
+  function chooseTopic(topic) {
+    setSelectedTopic(topic);
     setIndex(0);
     setAnswer("");
     setFeedback(null);
@@ -806,6 +1006,7 @@ function MathLearningPractice({
       const accepted = [current.answer, ...(current.acceptedAnswers || [])].map(normalizeAnswer);
       const correct = accepted.includes(normalizeAnswer(answer));
       setFeedback({ correct, answer: current.answer, explanation: current.explanation, hint: current.hint });
+      celebrate({ isCorrect: correct }, { subject: "Math" });
       return;
     }
     const result = await fetchJson("/answer", {
@@ -813,7 +1014,8 @@ function MathLearningPractice({
       body: JSON.stringify({ studentId, questionId: current.id, answer })
     });
     setFeedback({ correct: result.isCorrect, answer: current.answer, explanation: result.explanation, hint: current.hint });
-    if (result.progress) onProgressUpdate?.(result.progress);
+    celebrate(result, { subject: "Math" });
+    if (result.progress) onProgressUpdate?.(result.progress, result.student);
   }
 
   function nextQuestion() {
@@ -827,26 +1029,39 @@ function MathLearningPractice({
       <div className="bg-gradient-to-r from-ink via-teal to-leaf px-4 py-4 text-white md:px-5 md:py-5">
         <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4">
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-black uppercase tracking-wide text-white/80 md:text-sm">P4 Math Studio</div>
+            <div className="text-xs font-black uppercase tracking-wide text-white/80 md:text-sm">{practiceGrade} Math Studio</div>
             <h2 className="mt-1 text-xl font-black md:text-3xl">Learn, practise, play</h2>
             <p className="mt-2 hidden max-w-2xl text-sm font-semibold text-white/90 md:block">
               Start with the roadmap, choose a question category, then sharpen speed in game mode.
             </p>
           </div>
           <div className="grade-picker-scroll w-full max-w-full md:w-auto md:max-w-none">
-            <div className="flex gap-2">
-              <div className="shrink-0 rounded-lg bg-white/20 px-3 py-2 text-center backdrop-blur">
-                <div className="text-lg font-black md:text-2xl">{questions.length}</div>
-                <div className="text-[10px] font-bold md:text-xs">Questions</div>
-              </div>
-              <div className="shrink-0 rounded-lg bg-white/20 px-3 py-2 text-center backdrop-blur">
-                <div className="text-lg font-black md:text-2xl">{topicGroups.length}</div>
-                <div className="text-[10px] font-bold md:text-xs">Topics</div>
-              </div>
-              <div className="shrink-0 rounded-lg bg-white/20 px-3 py-2 text-center backdrop-blur">
-                <div className="text-lg font-black md:text-2xl">{progress.adaptiveLevel}</div>
-                <div className="text-[10px] font-bold md:text-xs">Level</div>
-              </div>
+            <div className="grid w-full grid-cols-3 gap-2 text-center sm:w-auto">
+              <MathStatBox
+                count={progressStats.topicCount}
+                label="Topics"
+                active={progressModal === "all"}
+                onClick={() => setProgressModal("all")}
+              />
+              <MathStatBox
+                count={progressStats.masteredCount}
+                label="Mastered"
+                active={progressModal === "mastered"}
+                onClick={() => setProgressModal("mastered")}
+              />
+              <MathStatBox
+                count={progressStats.toPracticeCount}
+                label="To Practice"
+                active={progressModal === "toPractice"}
+                onClick={() => setProgressModal("toPractice")}
+              />
+            </div>
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-xs font-bold text-white/90 sm:justify-end">
+              <span>Level {progress.adaptiveLevel}</span>
+              <span>·</span>
+              <span>{progress.answered || 0} answered</span>
+              <span>·</span>
+              <span>{progressStats.accuracy}% accuracy</span>
             </div>
           </div>
         </div>
@@ -868,17 +1083,81 @@ function MathLearningPractice({
         </div>
       </div>
 
+      <div className="border-b border-slate-200 bg-white px-4 py-3 md:px-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="relative min-w-0 flex-1">
+            <span className="sr-only">Search topics</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={topicSearch}
+              onChange={(event) => setTopicSearch(event.target.value)}
+              placeholder="Search topics…"
+              className="w-full rounded-md border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm font-semibold outline-none focus:border-teal focus:bg-white"
+            />
+          </label>
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-black text-slate-600">
+            <input
+              type="checkbox"
+              checked={showAdvanced}
+              onChange={(event) => setShowAdvanced(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-teal focus:ring-teal"
+            />
+            Advance
+          </label>
+        </div>
+        {!showAdvanced && (
+          <p className="mt-2 text-xs font-semibold text-slate-500">
+            Showing MOE syllabus topics for {practiceGrade}. Tick Advance for Olympiad and extension topics.
+          </p>
+        )}
+      </div>
+
       {mode === "learn" && (
         <div className="space-y-4 p-4 md:p-5">
+          {advanceLessonTopics.length > 0 && (
+            <div className="rounded-lg border border-teal/20 bg-teal/5 p-4">
+              <div className="text-xs font-black uppercase tracking-wide text-teal">Advance lessons</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {advanceLessonTopics.map((topic) => (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => openMathLesson(topic)}
+                    className={cx(
+                      "rounded-full border px-4 py-2 text-sm font-black transition",
+                      mathLessonTopic === topic ? "border-teal bg-teal text-white" : "border-teal/30 bg-white text-teal hover:border-teal"
+                    )}
+                  >
+                    {topic}
+                    {(progress.completedLessons || []).includes(`${practiceGrade}|${topic}`) && (
+                      <Check className="ml-1 inline h-4 w-4" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {mathLessonTopic && hasMathLesson(practiceGrade, mathLessonTopic) && (
+            <MathLessonCard
+              grade={practiceGrade}
+              topic={mathLessonTopic}
+              progress={progress}
+              onComplete={completeMathLesson}
+              onStartQuiz={startTopicQuiz}
+            />
+          )}
+
           {collapseRoadmapOnMobile ? (
             <div className="lg:hidden">
               <CollapsibleSection title="Show MOE Math roadmap">
-                <SyllabusRoadmap subject="Math" grade={grade} setGrade={setGrade} embedded />
+                <SyllabusRoadmap subject="Math" grade={grade} setGrade={setGrade} embedded hideGradePicker />
               </CollapsibleSection>
             </div>
           ) : null}
           <div className={cx(collapseRoadmapOnMobile && "hidden lg:block")}>
-            <SyllabusRoadmap subject="Math" grade={grade} setGrade={setGrade} />
+            <SyllabusRoadmap subject="Math" grade={grade} setGrade={setGrade} hideGradePicker />
           </div>
           <div className="grid gap-4 xl:grid-cols-[1.1fr_1fr]">
             <LessonCard progress={progress} question={fallbackQuestion} onStartLesson={() => setMode("practice")} onQuickChallenge={() => setMode("practice")} />
@@ -886,7 +1165,43 @@ function MathLearningPractice({
               <LevelProgress level={progress.adaptiveLevel} />
             </div>
           </div>
+          <TopicMastery
+            topics={displayTopicMastery}
+            questions={questions.filter((questionItem) => questionItem.grade === practiceGrade)}
+            selectedTopic={masteryTopic}
+            setSelectedTopic={(topic) => {
+              if (hasMathLesson(practiceGrade, topic)) {
+                openMathLesson(topic);
+              } else {
+                setMasteryTopic(topic);
+                setMathLessonTopic("");
+              }
+            }}
+            collapseLinkedQuestions
+          />
+          <div className="rounded-lg border border-teal/20 bg-teal/5 p-4 text-sm leading-6 text-slate-600">
+            <span className="font-black text-teal">Your Math progress</span>
+            {" — "}
+            {progress.answered > 0
+              ? `You have answered ${progress.answered} questions with ${progressStats.accuracy}% accuracy. ${progressStats.masteredCount} of ${progressStats.topicCount} topics mastered at ${practiceGrade}.`
+              : `Start practice to track topic mastery across ${progressStats.topicCount} ${practiceGrade} topics.`}
+            {progress.unlockedOlympiad ? " Olympiad track unlocked!" : " Reach level 8 to unlock Olympiad."}
+          </div>
         </div>
+      )}
+
+      {progressModal && (
+        <MathProgressModal
+          config={progressModalConfig[progressModal]}
+          topicMastery={topicMastery}
+          practiceGrade={practiceGrade}
+          onClose={() => setProgressModal(null)}
+          onSelectTopic={(topic) => {
+            setSelectedTopic(topic);
+            setProgressModal(null);
+            setMode("practice");
+          }}
+        />
       )}
 
       {isPracticeOpen && (
@@ -920,34 +1235,25 @@ function MathLearningPractice({
             ) : (
               <div className="grid min-h-0 flex-1 overflow-hidden xl:grid-cols-[330px_1fr]">
                 <aside className="min-h-0 overflow-y-auto border-r border-slate-200 bg-slate-50 p-4">
-                  <label className="text-sm font-black text-slate-600">
-                    Grade
-                    <select
-                      value={practiceGrade}
-                      onChange={(event) => chooseGrade(event.target.value)}
-                      className="mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-3 font-black outline-none focus:border-teal"
-                    >
-                      {practiceGrades.map((level) => (
-                        <option key={level} value={level}>{level}</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="mt-5">
+                  <div>
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <div className="text-sm font-black uppercase tracking-wide text-slate-400">Topics</div>
                         <h3 className="mt-1 font-black">Question Topics</h3>
                       </div>
-                      <span className="rounded-md bg-white px-3 py-2 text-sm font-black text-teal">{topicGroups.length}</span>
+                      <span className="rounded-md bg-white px-3 py-2 text-sm font-black text-teal">{visibleTopicGroups.length}</span>
                     </div>
                     <div className="mt-3 space-y-2">
-                      {topicGroups.length === 0 ? (
+                      {visibleTopicGroups.length === 0 ? (
                         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm font-semibold text-slate-500">
-                          No {practiceGrade} Math topics yet.
+                          {topicSearch.trim()
+                            ? `No topics match "${topicSearch.trim()}".`
+                            : showAdvanced
+                              ? `No ${practiceGrade} Math topics yet.`
+                              : `No MOE syllabus topics for ${practiceGrade} yet. Tick Advance for extension topics.`}
                         </div>
                       ) : (
-                        topicGroups.map((group) => (
+                        visibleTopicGroups.map((group) => (
                           <button
                             key={group.topic}
                             onClick={() => chooseTopic(group.topic)}
@@ -963,6 +1269,9 @@ function MathLearningPractice({
                                   {group.tracks.map((label) => (
                                     <span key={label} className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">{label}</span>
                                   ))}
+                                  {!isMoeMathTopic(practiceGrade, group.topic) && (
+                                    <span className="rounded bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase text-orange-700">Advance</span>
+                                  )}
                                 </div>
                               </div>
                               <span className={cx("grid h-8 w-8 shrink-0 place-items-center rounded-md", group.hasImages ? "bg-sun/20 text-orange-600" : "bg-cloud text-teal")}>
@@ -1014,7 +1323,7 @@ function MathLearningPractice({
                     submitAnswer={checkCurrentAnswer}
                     nextQuestion={nextQuestion}
                   />
-                  {topicGroups.length > 0 && topicQuestions.length === 0 && (
+                  {visibleTopicGroups.length > 0 && topicQuestions.length === 0 && (
                     <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm font-semibold text-slate-600">
                       No questions match the selected level filter for this topic.
                     </div>
@@ -1103,9 +1412,42 @@ function MathLearningPractice({
 }
 
 function MathQuestionPanel({ question, topic, questionNumber, totalQuestions, answer, setAnswer, feedback, submitAnswer, nextQuestion }) {
+  const [working, setWorking] = useState("");
+  const [aiFeedback, setAiFeedback] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  useEffect(() => {
+    setWorking("");
+    setAiFeedback(null);
+    setAiLoading(false);
+  }, [question?.id]);
+
+  async function evaluateWorking() {
+    if (!question || aiLoading) return;
+    setAiLoading(true);
+    setAiFeedback(null);
+    try {
+      const result = await fetchJson("/math/evaluate-working", {
+        method: "POST",
+        body: JSON.stringify({ questionId: question.id, answer, working })
+      });
+      setAiFeedback(result);
+    } catch (error) {
+      setAiFeedback({ error: error.message || "The AI coach is unavailable right now. Please try again." });
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   if (!question) {
     return <div className="rounded-lg border border-slate-200 p-5 text-sm font-semibold text-slate-500">Pick a category to start practising.</div>;
   }
+
+  const verdictStyles = {
+    correct: "border-green-200 bg-green-50",
+    "partly-correct": "border-amber-200 bg-amber-50",
+    incorrect: "border-orange-200 bg-orange-50"
+  };
 
   return (
     <div className="rounded-lg border border-slate-200 p-5">
@@ -1153,6 +1495,36 @@ function MathQuestionPanel({ question, topic, questionNumber, totalQuestions, an
         />
       )}
 
+      {question.requiresWorking && (
+        <div className="mt-5 rounded-lg border border-teal/30 bg-teal/5 p-4">
+          <div className="flex items-center gap-2 font-black text-teal">
+            <PenLine className="h-4 w-4" />
+            Show your working
+          </div>
+          <p className="mt-1 text-xs font-semibold text-slate-500">
+            Write every step, one per line. The AI coach will check each step and show you where it goes wrong.
+          </p>
+          <textarea
+            value={working}
+            onChange={(event) => setWorking(event.target.value)}
+            rows={6}
+            className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-base font-semibold leading-7 outline-none focus:border-teal"
+            placeholder={"Step 1: ...\nStep 2: ...\nStep 3: ..."}
+          />
+          <button
+            onClick={evaluateWorking}
+            disabled={!working.trim() || !answer || aiLoading}
+            className="mt-3 flex items-center gap-2 rounded-md bg-coral px-5 py-3 font-black text-white disabled:opacity-40"
+          >
+            <WandSparkles className="h-4 w-4" />
+            {aiLoading ? "AI coach is checking..." : "Check my working with AI coach"}
+          </button>
+          {!answer && working.trim() && (
+            <p className="mt-2 text-xs font-semibold text-slate-500">Type your final answer above before asking the AI coach.</p>
+          )}
+        </div>
+      )}
+
       <div className="mt-5 flex flex-wrap gap-3">
         <button onClick={submitAnswer} disabled={!answer} className="rounded-md bg-teal px-6 py-3 font-black text-white disabled:opacity-40">
           Check Answer
@@ -1162,10 +1534,57 @@ function MathQuestionPanel({ question, topic, questionNumber, totalQuestions, an
         </button>
       </div>
 
+      {aiFeedback?.error && (
+        <div className="pop-in mt-5 rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm font-semibold text-slate-600">
+          {aiFeedback.error}
+        </div>
+      )}
+
+      {aiFeedback?.evaluation && (
+        <div className={cx("pop-in mt-5 rounded-lg border p-4", verdictStyles[aiFeedback.evaluation.verdict] || "border-slate-200 bg-slate-50")}>
+          <div className="flex items-start gap-3">
+            <Ollie mood={aiFeedback.evaluation.verdict === "correct" ? "cheer" : "sad"} size={52} />
+            <div className="min-w-0 flex-1">
+              <div className="font-black">
+                {aiFeedback.evaluation.verdict === "correct"
+                  ? "AI Coach: All your steps are correct!"
+                  : aiFeedback.evaluation.verdict === "partly-correct"
+                    ? "AI Coach: Almost there — one step needs fixing."
+                    : `AI Coach: Let's find the mistake. Correct answer: ${aiFeedback.correctAnswer}`}
+              </div>
+              {aiFeedback.evaluation.firstErrorStep && (
+                <div className="mt-2 rounded-md border border-orange-200 bg-white px-3 py-2 text-sm font-bold text-orange-700">
+                  First wrong step: {aiFeedback.evaluation.firstErrorStep}
+                </div>
+              )}
+              {aiFeedback.evaluation.whatWentWrong && (
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  <span className="font-black text-slate-700">What went wrong: </span>
+                  {aiFeedback.evaluation.whatWentWrong}
+                </p>
+              )}
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                <span className="font-black text-slate-700">How to solve it: </span>
+                {aiFeedback.evaluation.explanation}
+              </p>
+              {aiFeedback.evaluation.encouragement && (
+                <p className="mt-2 text-sm font-bold text-teal">{aiFeedback.evaluation.encouragement}</p>
+              )}
+              {!aiFeedback.usedAI && (
+                <p className="mt-2 text-xs font-semibold text-slate-400">AI coach offline — showing the model solution instead.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {feedback && (
-        <div className={cx("mt-5 rounded-lg border p-4", feedback.correct ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50")}>
-          <div className="font-black">{feedback.correct ? "Correct. Nice thinking." : `Not yet. Answer: ${feedback.answer}`}</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{feedback.correct ? feedback.explanation : feedback.hint || feedback.explanation}</p>
+        <div className={cx("pop-in mt-5 flex items-start gap-3 rounded-lg border p-4", feedback.correct ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50")}>
+          <Ollie mood={feedback.correct ? "cheer" : "sad"} size={52} />
+          <div className="min-w-0">
+            <div className="font-black">{feedback.correct ? "Correct! Ollie is proud of you." : `Not yet. Answer: ${feedback.answer}`}</div>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{feedback.correct ? feedback.explanation : feedback.hint || feedback.explanation}</p>
+          </div>
         </div>
       )}
     </div>
@@ -1173,6 +1592,7 @@ function MathQuestionPanel({ question, topic, questionNumber, totalQuestions, an
 }
 
 function MathGameMode({ questions, textOnlyCount }) {
+  const { celebrateAnswerResult: celebrate } = useCelebration();
   const playableQuestions = useMemo(() => questions.filter((question) => !question.imageUrl).slice(0, 12), [questions]);
   const [gameIndex, setGameIndex] = useState(0);
   const [gameAnswer, setGameAnswer] = useState("");
@@ -1188,6 +1608,7 @@ function MathGameMode({ questions, textOnlyCount }) {
     setScore((value) => value + (correct ? 10 : 0));
     setStreak((value) => (correct ? value + 1 : 0));
     setGameFeedback({ correct, answer: current.answer });
+    celebrate({ isCorrect: correct }, { subject: "Math" });
   }
 
   function nextGameQuestion() {
@@ -1387,9 +1808,12 @@ function ScienceLearningPractice({ questions, mode, setMode, index, setIndex, an
                   </button>
                 </div>
                 {feedback && (
-                  <div className={cx("mt-5 rounded-lg border p-4", feedback.correct ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50")}>
-                    <div className="font-black">{feedback.correct ? "Correct. Science star earned!" : "Not yet. Try the next one with this clue."}</div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{feedback.correct ? feedback.explanation : feedback.hint}</p>
+                  <div className={cx("pop-in mt-5 flex items-start gap-3 rounded-lg border p-4", feedback.correct ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50")}>
+                    <Ollie mood={feedback.correct ? "cheer" : "think"} size={52} />
+                    <div className="min-w-0">
+                      <div className="font-black">{feedback.correct ? "Correct. Science star earned!" : "Not yet. Try the next one with this clue."}</div>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{feedback.correct ? feedback.explanation : feedback.hint}</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1429,27 +1853,7 @@ function MiniInfo({ title, value }) {
   );
 }
 
-function ChineseTrackCard({ icon: Icon, title, items }) {
-  return (
-    <div className="rounded-lg border border-slate-200 p-4">
-      <div className="flex items-center gap-2">
-        <div className="grid h-9 w-9 place-items-center rounded-md bg-cloud text-teal">
-          <Icon className="h-5 w-5" />
-        </div>
-        <h3 className="font-black">{title}</h3>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-1.5">
-        {items.map((item) => (
-          <span key={item} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold leading-5 text-slate-600">
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SyllabusRoadmap({ subject, grade, setGrade, embedded = false }) {
+function SyllabusRoadmap({ subject, grade, setGrade, embedded = false, hideGradePicker = false }) {
   const isScience = subject === "Science";
   const curriculum = isScience ? scienceCurriculum : mathCurriculum;
   const selected = curriculum[grade];
@@ -1463,11 +1867,13 @@ function SyllabusRoadmap({ subject, grade, setGrade, embedded = false }) {
           <h2 className="text-lg font-black">MOE {subject} Roadmap</h2>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">{selected.focus}</p>
         </div>
-        <GradePicker
-          grades={Object.keys(curriculum)}
-          value={grade}
-          onChange={setGrade}
-        />
+        {!hideGradePicker && (
+          <GradePicker
+            grades={Object.keys(curriculum)}
+            value={grade}
+            onChange={setGrade}
+          />
+        )}
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -1503,31 +1909,11 @@ function SyllabusRoadmap({ subject, grade, setGrade, embedded = false }) {
   );
 }
 
-function GradePicker({ grades, value, onChange, activeClassName = "bg-teal text-white" }) {
-  return (
-    <div className="grade-picker-scroll rounded-lg border border-slate-200 bg-slate-50 p-1">
-      {grades.map((level) => (
-        <button
-          key={level}
-          type="button"
-          onClick={() => onChange(level)}
-          className={cx(
-            "shrink-0 rounded-md px-3 py-2 text-sm font-black transition",
-            value === level ? activeClassName : "bg-white text-slate-600 hover:bg-slate-100"
-          )}
-        >
-          {level}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function MobileBottomNav({ activeTab, onChange }) {
   const tabs = [
     { id: "learn", label: "Learn", icon: BookOpenText },
     { id: "progress", label: "Progress", icon: LineChart },
-    { id: "family", label: "Family", icon: Users }
+    { id: "family", label: "My stats", icon: Users }
   ];
 
   return (
@@ -1556,6 +1942,7 @@ function MobileBottomNav({ activeTab, onChange }) {
 function MobileProgressPanel({
   activeSubject,
   progress,
+  chineseProgressView,
   mathQuestions,
   selectedMasteryTopic,
   setSelectedMasteryTopic,
@@ -1565,24 +1952,45 @@ function MobileProgressPanel({
   englishQuestions
 }) {
   const accuracy = Math.round((progress.correct / Math.max(progress.answered, 1)) * 100);
+  const chineseView = chineseProgressView || buildChineseProgressView();
+  const isChinese = activeSubject === "Chinese";
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="font-black">Your progress</h2>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-md bg-slate-50 p-2">
-            <div className="text-lg font-black text-teal">L{progress.adaptiveLevel || 1}</div>
-            <div className="text-xs text-slate-500">Level</div>
-          </div>
-          <div className="rounded-md bg-slate-50 p-2">
-            <div className="text-lg font-black">{accuracy}%</div>
-            <div className="text-xs text-slate-500">Accuracy</div>
-          </div>
-          <div className="rounded-md bg-slate-50 p-2">
-            <div className="text-lg font-black">{progress.answered || 0}</div>
-            <div className="text-xs text-slate-500">Answered</div>
-          </div>
+          {isChinese ? (
+            <>
+              <div className="rounded-md bg-slate-50 p-2">
+                <div className="text-lg font-black text-teal">{chineseView.wordsRemembered || 0}</div>
+                <div className="text-xs text-slate-500">Words</div>
+              </div>
+              <div className="rounded-md bg-slate-50 p-2">
+                <div className="text-lg font-black">{chineseView.accuracy}%</div>
+                <div className="text-xs text-slate-500">Accuracy</div>
+              </div>
+              <div className="rounded-md bg-slate-50 p-2">
+                <div className="text-lg font-black">{chineseView.answered || 0}</div>
+                <div className="text-xs text-slate-500">This week</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-md bg-slate-50 p-2">
+                <div className="text-lg font-black text-teal">L{progress.adaptiveLevel || 1}</div>
+                <div className="text-xs text-slate-500">Level</div>
+              </div>
+              <div className="rounded-md bg-slate-50 p-2">
+                <div className="text-lg font-black">{accuracy}%</div>
+                <div className="text-xs text-slate-500">Accuracy</div>
+              </div>
+              <div className="rounded-md bg-slate-50 p-2">
+                <div className="text-lg font-black">{progress.answered || 0}</div>
+                <div className="text-xs text-slate-500">Answered</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1604,7 +2012,7 @@ function MobileProgressPanel({
       )}
 
       {activeSubject === "Chinese" && (
-        <ChineseRoadmap grade={curriculumGrade} setGrade={setCurriculumGrade} />
+        <ChineseRoadmap grade={curriculumGrade} />
       )}
 
       {activeSubject === "English" && englishProgress && (
@@ -1690,7 +2098,7 @@ function ComingSoon({ subject }) {
   );
 }
 
-function StudentNavPanel({ student, activeSubject, onSelectSubject, onClose, profileClassName = "", role, onRoleChange, isGuest = false, onLogin }) {
+function StudentNavPanel({ student, activeSubject, onSelectSubject, onClose, profileClassName = "", role, onRoleChange, isGuest = false, onLogin, onViewProfile }) {
   return (
     <>
       <nav className="mt-8 space-y-2">
@@ -1730,7 +2138,11 @@ function StudentNavPanel({ student, activeSubject, onSelectSubject, onClose, pro
             Login
           </button>
         ) : (
-          <button type="button" className="mt-4 w-full rounded-md border border-slate-200 py-2 text-sm font-semibold text-teal">
+          <button
+            type="button"
+            onClick={onViewProfile}
+            className="mt-4 w-full rounded-md border border-slate-200 py-2 text-sm font-semibold text-teal transition hover:border-teal hover:bg-teal/5"
+          >
             View Profile
           </button>
         )}
@@ -1756,8 +2168,18 @@ function Brand({ compact = false }) {
   );
 }
 
-function Avatar({ label, size = "h-12 w-12" }) {
-  return <div className={cx("grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-sun to-coral font-black text-white", size)}>{label}</div>;
+function Avatar({ label, size = "h-12 w-12", framed = false }) {
+  return (
+    <div
+      className={cx(
+        "grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-sun to-coral font-black text-white",
+        framed && "ring-[3px] ring-sun ring-offset-2 shadow-lg shadow-sun/40",
+        size
+      )}
+    >
+      {label}
+    </div>
+  );
 }
 
 function RoleSwitch({ role, onChange, options = roleOptions }) {
@@ -1789,10 +2211,12 @@ const adminTopics = [
   "Calendar Reasoning",
   "Combinatorics",
   "Counting",
+  "Counting Shapes",
   "Cryptarithms",
   "Data Interpretation",
   "Decimals",
   "Divisibility",
+  "Equation",
   "Factors and Multiples",
   "Factorials",
   "Four Operations",
@@ -1817,7 +2241,6 @@ const adminTopics = [
 
 const difficultyOptions = ["Easy", "Medium", "Hard"];
 const trackOptions = ["Fundamental", "Core", "Olympiad"];
-const adminSubjects = ["Science", "Math", "Chinese", "English"];
 const adminGrades = ["P1", "P2", "P3", "P4", "P5", "P6"];
 
 const emptyAdminDraft = {
@@ -1860,7 +2283,9 @@ function AdminDashboard({
   onUploadQuestionImage,
   onGenerateSimilarQuestion,
   studentInsights,
-  onRefreshInsights
+  onRefreshInsights,
+  chineseAdminStatus,
+  onChineseAdminStatus
 }) {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [newDraft, setNewDraft] = useState({ ...emptyAdminDraft, subject, grade, ageLevel: grade });
@@ -1873,15 +2298,28 @@ function AdminDashboard({
       { Easy: 0, Medium: 0, Hard: 0 }
     );
   }, [questions]);
+  const userTabs = [
+    { id: "insights", label: "Student Insights", icon: Brain },
+    { id: "users", label: "Students", icon: Users },
+    { id: "parents", label: "Parents", icon: UserRoundCog }
+  ];
+  const userTabIds = userTabs.map((tab) => tab.id);
   const adminNav = [
     { id: "overview", label: "Overview", hint: "Command center", icon: LayoutDashboard },
-    { id: "insights", label: "Student Insights", hint: "Smart & commitment", icon: Brain },
+    { id: "insights", label: "Users", hint: "Insights, students, parents", icon: Users, sections: userTabIds },
     { id: "platform", label: "Platform Management", hint: "Settings and access", icon: SlidersHorizontal },
-    { id: "questions", label: "Question Bank", hint: "Curriculum assets", icon: Database },
-    { id: "users", label: "Users", hint: "Students and staff", icon: Users },
-    { id: "parents", label: "Parents", hint: "Family accounts", icon: UserRoundCog }
+    { id: "questions", label: "Question Bank", hint: "Curriculum assets", icon: Database, sections: ["questions", "chinese"] }
   ];
-  const activeAdminItem = adminNav.find((item) => item.id === adminSection) || adminNav[0];
+  const isNavItemActive = (item) => (item.sections ? item.sections.includes(adminSection) : item.id === adminSection);
+  const activeAdminItem = adminNav.find(isNavItemActive) || adminNav[0];
+  const isUsersPanel = userTabIds.includes(adminSection);
+  const questionSubjectTabs = [
+    { id: "Math", label: "Math", icon: Sigma },
+    { id: "English", label: "English", icon: BookOpenText },
+    { id: "chinese-content", label: "Chinese", hint: "Vocab & levels", icon: Languages },
+    { id: "Science", label: "Science", icon: FlaskConical }
+  ];
+  const isQuestionsPanel = adminSection === "questions" || adminSection === "chinese";
 
   useEffect(() => {
     setNewDraft((current) => ({ ...current, subject, grade, ageLevel: grade }));
@@ -1921,26 +2359,29 @@ function AdminDashboard({
           </button>
 
           <nav className="grid gap-2" aria-label="Admin dashboard sections">
-            {adminNav.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setAdminSection(item.id)}
-                className={cx(
-                  "relative grid min-h-[62px] grid-cols-[38px_minmax(0,1fr)] items-center gap-3 rounded-lg border px-2.5 py-2 text-left transition",
-                  adminSection === item.id
-                    ? "border-white/20 bg-white text-ink shadow-sm before:absolute before:-left-4 before:h-9 before:w-1 before:rounded-r before:bg-teal"
-                    : "border-transparent text-slate-100 hover:border-white/15 hover:bg-white/5"
-                )}
-              >
-                <span className={cx("grid h-9 w-9 place-items-center rounded-md", adminSection === item.id ? "bg-teal/10 text-teal" : "bg-white/10 text-current")}>
-                  <item.icon className="h-5 w-5" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-black leading-tight">{item.label}</span>
-                  <span className={cx("mt-0.5 block text-xs font-semibold", adminSection === item.id ? "text-slate-500" : "text-slate-300")}>{item.hint}</span>
-                </span>
-              </button>
-            ))}
+            {adminNav.map((item) => {
+              const active = isNavItemActive(item);
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setAdminSection(item.id)}
+                  className={cx(
+                    "relative grid min-h-[62px] grid-cols-[38px_minmax(0,1fr)] items-center gap-3 rounded-lg border px-2.5 py-2 text-left transition",
+                    active
+                      ? "border-white/20 bg-white text-ink shadow-sm before:absolute before:-left-4 before:h-9 before:w-1 before:rounded-r before:bg-teal"
+                      : "border-transparent text-slate-100 hover:border-white/15 hover:bg-white/5"
+                  )}
+                >
+                  <span className={cx("grid h-9 w-9 place-items-center rounded-md", active ? "bg-teal/10 text-teal" : "bg-white/10 text-current")}>
+                    <item.icon className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black leading-tight">{item.label}</span>
+                    <span className={cx("mt-0.5 block text-xs font-semibold", active ? "text-slate-500" : "text-slate-300")}>{item.hint}</span>
+                  </span>
+                </button>
+              );
+            })}
           </nav>
 
           <div className="mt-auto rounded-lg border border-white/10 bg-white/5 p-3">
@@ -1978,25 +2419,91 @@ function AdminDashboard({
       </header>
 
       <div className="px-5 py-6 md:px-7">
+        {isQuestionsPanel && (
+        <>
+        <div className="mb-5 flex items-end gap-1 border-b border-slate-300" role="tablist" aria-label="Question bank subjects">
+          {questionSubjectTabs.map((tab) => {
+            const isChineseTab = tab.id === "chinese-content";
+            const active = isChineseTab ? adminSection === "chinese" : adminSection === "questions" && subject === tab.id;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  if (isChineseTab) {
+                    setAdminSection("chinese");
+                  } else {
+                    setAdminSection("questions");
+                    onFilterChange(tab.id, grade);
+                  }
+                }}
+                className={cx(
+                  "-mb-px flex items-center gap-2 rounded-t-lg border px-4 py-2.5 text-sm font-black transition",
+                  active
+                    ? "border-slate-300 border-b-white bg-white text-ink shadow-sm"
+                    : "border-transparent text-slate-500 hover:bg-white/70 hover:text-ink"
+                )}
+              >
+                <tab.icon className={cx("h-4 w-4", active ? "text-teal" : "text-slate-400")} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        {adminSection === "questions" && (
         <section className="grid gap-4 md:grid-cols-4">
           <AdminMetric icon={ClipboardList} label={`${grade} ${subject}`} value={questions.length} />
           <AdminMetric icon={Medal} label="Easy" value={byDifficulty.Easy || 0} />
           <AdminMetric icon={Target} label="Medium" value={byDifficulty.Medium || 0} />
           <AdminMetric icon={Trophy} label="Hard" value={byDifficulty.Hard || 0} />
         </section>
+        )}
+        </>
+        )}
 
         {adminSection === "overview" && <AdminOverview platformInfo={platformInfo} users={users} questions={questions} />}
-        {adminSection === "insights" && (
-          <StudentInsightsDashboard
-            insights={studentInsights}
-            selectedStudentId={selectedStudentId}
-            onSelectStudent={setSelectedStudentId}
-            onRefresh={onRefreshInsights}
-          />
+        {isUsersPanel && (
+          <>
+            <div className="mb-5 flex items-end gap-1 border-b border-slate-300" role="tablist" aria-label="Users sections">
+              {userTabs.map((tab) => {
+                const active = adminSection === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setAdminSection(tab.id)}
+                    className={cx(
+                      "-mb-px flex items-center gap-2 rounded-t-lg border px-4 py-2.5 text-sm font-black transition",
+                      active
+                        ? "border-slate-300 border-b-white bg-white text-ink shadow-sm"
+                        : "border-transparent text-slate-500 hover:bg-white/70 hover:text-ink"
+                    )}
+                  >
+                    <tab.icon className={cx("h-4 w-4", active ? "text-teal" : "text-slate-400")} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            {adminSection === "insights" && (
+              <StudentInsightsDashboard
+                insights={studentInsights}
+                selectedStudentId={selectedStudentId}
+                onSelectStudent={setSelectedStudentId}
+                onRefresh={onRefreshInsights}
+              />
+            )}
+            {adminSection === "users" && <UserManagement users={users} onCreateUser={onCreateUser} onUpdateUser={onUpdateUser} />}
+            {adminSection === "parents" && <ParentManagement users={users} onCreateUser={onCreateUser} onUpdateUser={onUpdateUser} />}
+          </>
         )}
         {adminSection === "platform" && <PlatformManagement platformInfo={platformInfo} subject={subject} grade={grade} />}
-        {adminSection === "users" && <UserManagement users={users} onCreateUser={onCreateUser} onUpdateUser={onUpdateUser} />}
-        {adminSection === "parents" && <ParentManagement users={users} onCreateUser={onCreateUser} onUpdateUser={onUpdateUser} />}
+
+        {adminSection === "chinese" && (
+          <ChineseContentAdmin status={chineseAdminStatus} onStatus={onChineseAdminStatus} />
+        )}
 
         {adminSection === "questions" && (
         <section className="mt-5 rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -2006,17 +2513,6 @@ function AdminDashboard({
               <p className="mt-1 text-sm text-slate-500">Edit student-facing learning and practice content. Changes are saved to the local JSON database.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={subject}
-                onChange={(event) => onFilterChange(event.target.value, grade)}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-black outline-none focus:border-teal"
-              >
-                {adminSubjects.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
               <select
                 value={grade}
                 onChange={(event) => onFilterChange(subject, event.target.value)}
@@ -2741,6 +3237,9 @@ function Stat({ icon: Icon, value, label, color }) {
 }
 
 function LessonCard({ progress, question, onStartLesson, onQuickChallenge }) {
+  const topic = question?.topic || "Math Practice";
+  const helpText = question?.helpText || "Choose a topic and start practising to build your mastery.";
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-5">
       <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[1fr_320px] lg:items-center">
@@ -2750,8 +3249,8 @@ function LessonCard({ progress, question, onStartLesson, onQuickChallenge }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-black text-blue-600">Adaptive Lesson</div>
-            <h2 className="mt-2 text-xl font-black md:text-2xl">{question.topic}: Level {progress.adaptiveLevel}</h2>
-            <p className="mt-2 text-sm text-slate-500">{question.helpText}</p>
+            <h2 className="mt-2 text-xl font-black md:text-2xl">{topic}: Level {progress.adaptiveLevel}</h2>
+            <p className="mt-2 text-sm text-slate-500">{helpText}</p>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm sm:justify-start">
               <span className="font-black lg:hidden">Level {progress.adaptiveLevel}/10</span>
               <span className="hidden font-black lg:inline">Level {progress.adaptiveLevel}</span>
@@ -2789,6 +3288,15 @@ function ProgressDots({ level }) {
 }
 
 function PracticeCard({ question, selectedAnswer, setSelectedAnswer, submitAnswer, feedback }) {
+  if (!question) {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="font-black">Practice Question</h2>
+        <p className="mt-4 text-sm font-semibold text-slate-500">Loading your next question...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
@@ -2838,7 +3346,7 @@ function PracticeCard({ question, selectedAnswer, setSelectedAnswer, submitAnswe
       {feedback && (
         <div className={cx("mt-4 rounded-lg border p-4", feedback.isCorrect ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50")}>
           <div className="flex items-center gap-2 font-black">
-            {feedback.isCorrect ? <Check className="h-5 w-5 text-leaf" /> : <Target className="h-5 w-5 text-coral" />}
+            <Ollie mood={feedback.isCorrect ? "cheer" : "think"} size={40} />
             {feedback.isCorrect ? "Great work!" : "Good try. EduSG adjusted the path."}
           </div>
           <p className="mt-1 text-sm text-slate-600">{feedback.explanation}</p>
@@ -2997,32 +3505,50 @@ function LinkedQuestionsList({ activeTopic, linkedQuestions, showHeader = false,
   );
 }
 
-function ParentPanel({ progress, accuracy }) {
-  const strengths = useMemo(() => {
-    const sorted = Object.entries(progress.topicMastery).sort((a, b) => b[1] - a[1]);
-    return sorted.slice(0, 3).map(([topic]) => topic);
-  }, [progress.topicMastery]);
-
-  const focus = useMemo(() => {
-    const sorted = Object.entries(progress.topicMastery).sort((a, b) => a[1] - b[1]);
-    return sorted.slice(0, 2).map(([topic]) => topic);
-  }, [progress.topicMastery]);
+function MyProgressPanel({ activeSubject, progress, accuracy, student }) {
+  const isChinese = activeSubject === "Chinese";
+  const { strengths, focus } = useMemo(() => {
+    if (isChinese) {
+      const picked = pickChineseStrengthsAndFocus(progress.topicMastery || {});
+      const topicLabels = Object.keys(progress.topicMastery || {});
+      return {
+        strengths: picked.strengths.length ? picked.strengths : ["Start practising vocab"],
+        focus: picked.focus.length ? picked.focus : topicLabels.slice(0, 2)
+      };
+    }
+    const sortedHigh = Object.entries(progress.topicMastery || {}).sort((a, b) => b[1] - a[1]);
+    const sortedLow = Object.entries(progress.topicMastery || {}).sort((a, b) => a[1] - b[1]);
+    return {
+      strengths: sortedHigh.slice(0, 3).map(([topic]) => topic),
+      focus: sortedLow.slice(0, 2).map(([topic]) => topic)
+    };
+  }, [isChinese, progress.topicMastery]);
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-black">For Parents</h2>
-        <button className="flex items-center gap-1 text-sm font-bold text-teal">View full report <ChevronRight className="h-4 w-4" /></button>
+        <h2 className="text-lg font-black">My progress</h2>
+        <Ollie mood="happy" size={40} />
       </div>
-      <div className="mt-5 rounded-lg border border-slate-200 p-4">
-        <div className="font-black">This week's progress</div>
-        <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className={cx("rounded-lg bg-coral/10 p-3 text-center", (student?.streak || 0) >= 3 && "flame-hot")}>
+          <div className="text-xl font-black text-coral">{student?.streak || 0}</div>
+          <div className="text-xs font-bold text-slate-500">Day streak</div>
+        </div>
+        <div className="rounded-lg bg-sun/15 p-3 text-center">
+          <div className="text-xl font-black text-orange-600">{student?.stars || 0}</div>
+          <div className="text-xs font-bold text-slate-500">Stars</div>
+        </div>
+      </div>
+      <div className="mt-4 rounded-lg border border-slate-200 p-4">
+        <div className="font-black">This week</div>
+        <div className="mt-4 grid grid-cols-3 gap-3 text-center">
           <Metric value={`${Math.floor(progress.studyMinutes / 60)}h ${progress.studyMinutes % 60}m`} label="Study time" />
           <Metric value={`${accuracy}%`} label="Accuracy" />
           <Metric value={`+${progress.starsEarnedWeek}`} label="Stars earned" />
         </div>
-        <ListBlock title="Strengths" items={strengths} good />
-        <ListBlock title="Focus areas" items={focus} />
+        <ListBlock title="I'm great at" items={strengths} good />
+        <ListBlock title="Practice next" items={focus} />
       </div>
     </div>
   );
@@ -3103,6 +3629,7 @@ export function AdminAppShell() {
   const [adminSection, setAdminSection] = useState("overview");
   const [studentInsights, setStudentInsights] = useState(null);
   const [adminDashboard, setAdminDashboard] = useState(null);
+  const [chineseAdminStatus, setChineseAdminStatus] = useState("");
 
   useEffect(() => {
     loadAdminQuestions();
@@ -3204,6 +3731,8 @@ export function AdminAppShell() {
       onGenerateSimilarQuestion={generateSimilarQuestion}
       studentInsights={studentInsights}
       onRefreshInsights={loadStudentInsights}
+      chineseAdminStatus={chineseAdminStatus}
+      onChineseAdminStatus={setChineseAdminStatus}
     />
   );
 }

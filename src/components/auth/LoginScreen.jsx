@@ -1,12 +1,6 @@
 import React, { useState } from "react";
-import { BookOpenText, FlaskConical, Languages, Sigma } from "lucide-react";
+import { BookOpenText, Eye, EyeOff, FlaskConical, Languages, Sigma } from "lucide-react";
 import { cx } from "../../lib/api";
-
-const demoAccounts = [
-  { label: "Jayden", email: "jayden@edusg.sg" },
-  { label: "Mum", email: "mum@edusg.sg" },
-  { label: "Philip", email: "philip@edusg.sg" }
-];
 
 function GoogleIcon() {
   return (
@@ -24,6 +18,34 @@ function AppleIcon() {
     <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
       <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
     </svg>
+  );
+}
+
+function PasswordField({ value, onChange, placeholder, autoComplete, minLength, required = true }) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="login-password-wrap">
+      <input
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        className="login-field login-field-password"
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        minLength={minLength}
+        required={required}
+      />
+      <button
+        type="button"
+        className="login-password-toggle"
+        onClick={() => setVisible((current) => !current)}
+        aria-label={visible ? "Hide password" : "Show password"}
+        tabIndex={-1}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
   );
 }
 
@@ -61,6 +83,7 @@ function LandingBackdrop() {
 }
 
 export default function LoginScreen({
+  variant = "page",
   authForm,
   authError,
   onChange,
@@ -68,12 +91,19 @@ export default function LoginScreen({
   onRegister,
   onOAuthLogin,
   onContinueAsGuest,
+  onClose,
+  rememberDevice = true,
+  onRememberDeviceChange,
+  oauthProviders = { google: null, apple: null },
   oauthLoading,
   loading
 }) {
+  const isModal = variant === "modal";
   const [mode, setMode] = useState("login");
-  const [showDemo, setShowDemo] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "", grade: "P4" });
+  const showGoogle = oauthProviders.google !== false;
+  const showApple = oauthProviders.apple !== false;
+  const showSocial = showGoogle || showApple;
 
   function updateRegister(field, value) {
     setRegisterForm((current) => ({ ...current, [field]: value }));
@@ -84,13 +114,12 @@ export default function LoginScreen({
     onRegister?.(registerForm);
   }
 
-  return (
-    <main className="login-scene">
-      <LandingBackdrop />
-
-      <div className="login-glass" data-testid="login-screen">
+  const card = (
+      <div className={cx("login-glass", isModal && "login-glass-modal")} data-testid="login-screen">
         <div className="login-glass-head">
-          <h1 className="login-glass-title">{mode === "login" ? "Welcome back" : "Join EduSG"}</h1>
+          <h1 id={isModal ? "login-modal-title" : undefined} className="login-glass-title">
+            {mode === "login" ? "Welcome back" : "Join EduSG"}
+          </h1>
           <p className="login-glass-sub">
             {mode === "login" ? "Sign in to pick up where you left off." : "A quick setup and you're ready to learn."}
           </p>
@@ -113,18 +142,28 @@ export default function LoginScreen({
           </button>
         </div>
 
+        {authError && <p className="login-error login-error-banner">{authError}</p>}
+
+        {showSocial && (
+          <>
         <div className="login-social">
+          {showGoogle && (
           <button type="button" disabled={loading || oauthLoading} onClick={() => onOAuthLogin?.("google")} className="login-social-btn" title="Google">
             <GoogleIcon />
             <span>Google</span>
           </button>
+          )}
+          {showApple && (
           <button type="button" disabled={loading || oauthLoading} onClick={() => onOAuthLogin?.("apple")} className="login-social-btn" title="Apple">
             <AppleIcon />
             <span>Apple</span>
           </button>
+          )}
         </div>
 
         <div className="login-divider"><span>or email</span></div>
+          </>
+        )}
 
         {mode === "login" ? (
           <form onSubmit={onSubmit} className="login-form">
@@ -137,16 +176,20 @@ export default function LoginScreen({
               autoComplete="email"
               required
             />
-            <input
-              type="password"
+            <PasswordField
               value={authForm.password}
               onChange={(event) => onChange("password", event.target.value)}
-              className="login-field"
               placeholder="Password"
               autoComplete="current-password"
-              required
             />
-            {authError && <p className="login-error">{authError}</p>}
+            <label className="login-remember">
+              <input
+                type="checkbox"
+                checked={rememberDevice}
+                onChange={(event) => onRememberDeviceChange?.(event.target.checked)}
+              />
+              <span>Remember me on this device — stay signed in</span>
+            </label>
             <button type="submit" disabled={loading || oauthLoading} className="login-btn-primary">
               {loading ? "Signing in…" : "Sign in"}
             </button>
@@ -170,15 +213,12 @@ export default function LoginScreen({
               autoComplete="email"
               required
             />
-            <input
-              type="password"
+            <PasswordField
               value={registerForm.password}
               onChange={(event) => updateRegister("password", event.target.value)}
-              className="login-field"
               placeholder="Password (6+ chars)"
               autoComplete="new-password"
               minLength={6}
-              required
             />
             <select value={registerForm.grade} onChange={(event) => updateRegister("grade", event.target.value)} className="login-field">
               {["P1", "P2", "P3", "P4", "P5", "P6"].map((grade) => (
@@ -187,7 +227,6 @@ export default function LoginScreen({
                 </option>
               ))}
             </select>
-            {authError && <p className="login-error">{authError}</p>}
             <button type="submit" disabled={loading || oauthLoading} className="login-btn-primary">
               {loading ? "Creating…" : "Create account"}
             </button>
@@ -195,34 +234,25 @@ export default function LoginScreen({
         )}
 
         <div className="login-foot">
-          <button type="button" onClick={() => setShowDemo((v) => !v)} className="login-foot-link">
-            {showDemo ? "Hide demos" : "Try a demo account"}
-          </button>
-          {showDemo && (
-            <div className="login-demo">
-              {demoAccounts.map((account) => (
-                <button
-                  key={account.email}
-                  type="button"
-                  onClick={() => {
-                    setMode("login");
-                    onChange("email", account.email);
-                    onChange("password", "edusg123");
-                  }}
-                  className="login-demo-btn"
-                >
-                  {account.label}
-                </button>
-              ))}
-            </div>
-          )}
-          {onContinueAsGuest && (
-            <button type="button" onClick={onContinueAsGuest} className="login-foot-link">
-              Browse without signing in
+          {(onContinueAsGuest || (isModal && onClose)) && (
+            <button
+              type="button"
+              onClick={onContinueAsGuest || onClose}
+              className="login-foot-link"
+            >
+              {isModal ? "Continue browsing" : "Browse without signing in"}
             </button>
           )}
         </div>
       </div>
+  );
+
+  if (isModal) return card;
+
+  return (
+    <main className="login-scene">
+      <LandingBackdrop />
+      {card}
     </main>
   );
 }

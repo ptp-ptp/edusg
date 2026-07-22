@@ -5,7 +5,19 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase =
   supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          flowType: "pkce",
+          detectSessionInUrl: true,
+          persistSession: true,
+          autoRefreshToken: true,
+          storage: window.localStorage
+        }
+      })
     : null;
 
 export const isSupabaseConfigured = Boolean(supabase);
+
+export function getOAuthRedirectUrl() {
+  return `${window.location.origin}/auth/callback`;
+}

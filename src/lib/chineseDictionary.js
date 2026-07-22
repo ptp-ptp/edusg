@@ -1,4 +1,5 @@
 import { chineseVocabByGrade, getWordPinyin } from "../data/chinese/index.js";
+import p4ExtraWords from "../data/chinese/p4-extra-words.json";
 
 const DICT_URL = "/chinese/dictionary/cedict-lite.json";
 
@@ -10,27 +11,33 @@ let curriculumIndex = null;
 /** @type {Map<string, string[]> | null} */
 let byFirstChar = null;
 
+function addCurriculumEntry(map, word, entry, grade) {
+  if (!word || word.length > 3) return;
+  const existing = map.get(word);
+  // Prefer entries that already have examples/breakdown; otherwise first wins
+  if (existing && (existing.examples?.length || existing.breakdown?.length)) return;
+  map.set(word, {
+    word,
+    pinyin: getWordPinyin(entry) || entry.pinyin || "",
+    english: entry.english || "",
+    examples: entry.examples || [],
+    breakdown: entry.breakdown || [],
+    lesson: entry.lesson || "",
+    type: entry.type || "",
+    source: "curriculum",
+    grade
+  });
+}
+
 function buildCurriculumIndex() {
   const map = new Map();
   for (const [grade, words] of Object.entries(chineseVocabByGrade)) {
     for (const entry of words || []) {
-      const word = entry.word;
-      if (!word || word.length > 3) continue;
-      const existing = map.get(word);
-      // Prefer entries that already have examples/breakdown; otherwise first wins
-      if (existing && (existing.examples?.length || existing.breakdown?.length)) continue;
-      map.set(word, {
-        word,
-        pinyin: getWordPinyin(entry) || entry.pinyin || "",
-        english: entry.english || "",
-        examples: entry.examples || [],
-        breakdown: entry.breakdown || [],
-        lesson: entry.lesson || "",
-        type: entry.type || "",
-        source: "curriculum",
-        grade
-      });
+      addCurriculumEntry(map, entry.word, entry, grade);
     }
+  }
+  for (const entry of p4ExtraWords.words || []) {
+    addCurriculumEntry(map, entry.word, entry, "P4-extra");
   }
   return map;
 }

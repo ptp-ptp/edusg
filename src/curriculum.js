@@ -574,6 +574,12 @@ export const chineseCurriculum = {
         hours: "About 5 hours weekly",
         characters: "Deeper vocabulary and broader reading than Chinese",
         focus: ["Read wider texts with more complex language.", "Express opinions with reasons.", "Revise writing for content, vocabulary and flow."]
+      },
+      extra: {
+        label: "Extra",
+        hours: "Tuition supplement",
+        characters: "HCL Term 3 vocabulary, phrases and reading passages",
+        focus: ["Build richer idioms and oral phrases.", "Practise reading passages for exams.", "Review tuition content not covered in standard lists."]
       }
     }
   },

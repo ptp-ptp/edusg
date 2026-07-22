@@ -1,5 +1,7 @@
 import { scienceP4Questions, thinkAcademyP4OlympiadQuestions } from "./questionBank.js";
 import { p4FundamentalMathQuestions } from "./p4FundamentalQuestions.js";
+import { p4EquationQuestions } from "./p4EquationQuestions.js";
+import { p4CountingShapesQuestions } from "./p4CountingShapesQuestions.js";
 import { englishP4Questions } from "./englishQuestions.js";
 
 export const seedDatabase = {
@@ -39,10 +41,10 @@ export const seedDatabase = {
     {
       id: "stu-steven",
       role: "student",
-      name: "Steven",
-      email: "steven@edusg.sg",
+      name: "Steven Pham",
+      email: "stevenpham@edusg.sg",
       grade: "P4",
-      avatar: "ST",
+      avatar: "SP",
       linkedParentId: "usr-philip",
       stars: 1200,
       streak: 7,
@@ -55,10 +57,10 @@ export const seedDatabase = {
     {
       id: "stu-anna",
       role: "student",
-      name: "Anna",
-      email: "anna@edusg.sg",
+      name: "Anna Pham",
+      email: "annapham@edusg.sg",
       grade: "P2",
-      avatar: "AN",
+      avatar: "AP",
       linkedParentId: "usr-philip",
       stars: 640,
       streak: 3,
@@ -73,7 +75,7 @@ export const seedDatabase = {
       role: "admin",
       roles: ["admin", "parent"],
       name: "Philip",
-      email: "philip@edusg.sg",
+      email: "tphuongcdc@edusg.sg",
       avatar: "PH",
       linkedStudentId: "stu-steven",
       linkedStudentIds: ["stu-steven", "stu-anna"],
@@ -323,10 +325,12 @@ export const seedDatabase = {
     { id: "notif-3", userId: "par-mum", type: "alert", title: "Emma inactive", body: "Emma has not practiced in 2 days.", read: false, createdAt: "2026-06-29T08:00:00.000Z" }
   ],
   rewardsCatalog: [
-    { id: "reward-1", name: "Star Frame", cost: 100, category: "avatar", emoji: "⭐" },
-    { id: "reward-2", name: "Ocean Theme", cost: 250, category: "theme", emoji: "🌊" },
-    { id: "reward-3", name: "Bonus Game Unlock", cost: 500, category: "game", emoji: "🎮" },
-    { id: "reward-4", name: "Ice Cream Treat", cost: 1000, category: "treat", emoji: "🍦" }
+    { id: "reward-1", name: "Gold Star Frame", cost: 100, category: "avatar", emoji: "⭐", description: "A shiny gold ring around your avatar" },
+    { id: "reward-2", name: "Ocean Theme", cost: 250, category: "theme", emoji: "🌊", description: "Turn your dashboard ocean blue" },
+    { id: "reward-5", name: "Sunset Theme", cost: 250, category: "theme", emoji: "🌅", description: "Warm sunset colours everywhere" },
+    { id: "reward-6", name: "Streak Freeze", cost: 150, category: "powerup", emoji: "🧊", description: "Protects your streak if you miss a day" },
+    { id: "reward-3", name: "Bonus Game Unlock", cost: 500, category: "game", emoji: "🎮", description: "Unlock all English mini-games early" },
+    { id: "reward-4", name: "Ice Cream Treat", cost: 1000, category: "treat", emoji: "🍦", description: "Show this to your parents to claim!" }
   ],
   rewardRedemptions: [],
   platformSettings: {
@@ -448,6 +452,8 @@ export const seedDatabase = {
       hint: "Try multiplying by 2 before adding something."
     },
     ...p4FundamentalMathQuestions,
+    ...p4EquationQuestions,
+    ...p4CountingShapesQuestions,
     ...thinkAcademyP4OlympiadQuestions,
     ...scienceP4Questions,
     ...englishP4Questions

@@ -1,0 +1,58 @@
+{
+  "topics": [
+    {
+      "id": "self-and-family",
+      "label": "Self and family",
+      "labelZh": "自我与家人",
+      "tiers": {
+        "P1A": { "theme": ["family", "body", "places", "numbers", "colours"] },
+        "P1B": { "theme": ["family", "body", "places", "colours"] }
+      }
+    },
+    {
+      "id": "school-life",
+      "label": "School life",
+      "labelZh": "学校生活",
+      "tiers": {
+        "P1A": { "theme": ["school", "objects"] },
+        "P1B": { "theme": ["school", "objects"], "lesson": ["lesson-1"] }
+      }
+    },
+    {
+      "id": "food-and-daily-routines",
+      "label": "Food and daily routines",
+      "labelZh": "饮食与日常作息",
+      "tiers": {
+        "P1A": { "theme": ["actions", "time"], "lesson": ["lesson-3", "lesson-7"] },
+        "P1B": { "theme": ["actions", "time", "opposites"], "lesson": ["lesson-2", "lesson-3", "lesson-5"] }
+      }
+    },
+    {
+      "id": "animals-and-nature",
+      "label": "Animals and nature",
+      "labelZh": "动物与自然",
+      "tiers": {
+        "P1A": { "theme": ["animals", "nature"], "lesson": ["lesson-10"] },
+        "P1B": { "theme": ["animals", "nature"] }
+      }
+    },
+    {
+      "id": "festivals",
+      "label": "Festivals",
+      "labelZh": "节日",
+      "tiers": {
+        "P1A": { "lesson": [] },
+        "P1B": { "lesson": ["lesson-7"] }
+      }
+    },
+    {
+      "id": "feelings-and-manners",
+      "label": "Feelings and manners",
+      "labelZh": "感受与礼貌",
+      "tiers": {
+        "P1A": { "theme": ["opposites", "actions"], "lesson": ["lesson-6", "lesson-9"] },
+        "P1B": { "theme": ["opposites"], "lesson": ["lesson-2", "lesson-3", "lesson-9"] }
+      }
+    }
+  ]
+}

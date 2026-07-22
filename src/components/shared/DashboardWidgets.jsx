@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { cx } from "../../lib/api";
 
 export function StatCard({ label, value, sub, tone = "teal", icon: Icon }) {
@@ -24,12 +24,21 @@ export function StatCard({ label, value, sub, tone = "teal", icon: Icon }) {
 export function ScoreRing({ score, label, size = 88 }) {
   const radius = (size - 12) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const offset = mounted ? circumference - (score / 100) * circumference : circumference;
+
   return (
     <div className="flex flex-col items-center">
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e2e8f0" strokeWidth="8" />
         <circle
+          className="ring-animate"
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -82,7 +91,7 @@ export function SubjectProgressCard({ subject, level, mastery, answered, nextAct
         <span className="text-sm font-black text-teal">L{level}</span>
       </div>
       <div className="mt-3 h-2 rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-teal" style={{ width: `${mastery}%` }} />
+        <div className="progress-fill h-full rounded-full bg-teal" style={{ width: `${mastery}%` }} />
       </div>
       <div className="mt-2 flex justify-between text-xs text-slate-500">
         <span>{mastery}% mastery</span>
@@ -123,7 +132,7 @@ export function GoalCard({ goal }) {
         <span className="text-xs font-bold text-slate-400">{goal.subject}</span>
       </div>
       <div className="mt-2 h-2 rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-leaf" style={{ width: `${pct}%` }} />
+        <div className="progress-fill h-full rounded-full bg-leaf" style={{ width: `${pct}%` }} />
       </div>
       <div className="mt-1 text-xs text-slate-500">{goal.progress}/{goal.targetCount} · by {new Date(goal.dueAt).toLocaleDateString()}</div>
     </div>
@@ -132,7 +141,7 @@ export function GoalCard({ goal }) {
 
 export function AchievementBadge({ title, earnedAt, locked = false }) {
   return (
-    <div className={cx("rounded-lg border p-3 text-center", locked ? "border-dashed border-slate-200 opacity-50" : "border-slate-200 bg-white shadow-sm")}>
+    <div className={cx("rounded-lg border p-3 text-center transition", locked ? "border-dashed border-slate-200 opacity-50" : "pop-in border-sun/40 bg-white shadow-sm hover:-translate-y-0.5 hover:shadow-md")}>
       <div className="text-2xl">{locked ? "🔒" : "🏅"}</div>
       <div className="mt-2 text-xs font-black leading-tight">{title}</div>
       {!locked && earnedAt && (

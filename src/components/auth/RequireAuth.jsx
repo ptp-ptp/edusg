@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSession } from "../../context/SessionContext";
 
@@ -11,11 +11,20 @@ function AuthLoadingScreen() {
 }
 
 export default function RequireAuth({ children, roles }) {
-  const { session, loading } = useSession();
+  const { session, loading, openLogin } = useSession();
   const location = useLocation();
 
+  useEffect(() => {
+    if (!loading && !session) openLogin();
+  }, [loading, session, openLogin]);
+
   if (loading) return <AuthLoadingScreen />;
-  if (!session) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!session) {
+    if (location.pathname !== "/" && !location.pathname.startsWith("/learn")) {
+      return <Navigate to="/" replace />;
+    }
+    return null;
+  }
 
   if (roles?.length) {
     const userRoles = session.user?.roles?.length ? session.user.roles : [session.user?.role].filter(Boolean);

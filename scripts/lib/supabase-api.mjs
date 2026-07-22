@@ -34,8 +34,14 @@ export async function fetchApiKeys(token, projectRef) {
 }
 
 export async function configureAuthUrls(token, projectRef, siteUrl) {
-  const localUrl = "http://127.0.0.1:5173";
-  const redirectUrls = [siteUrl, `${siteUrl}/`, `${localUrl}`, `${localUrl}/`].join(",");
+  const localUrls = ["http://127.0.0.1:5173", "http://localhost:5173"];
+  const redirectUrls = [
+    siteUrl,
+    `${siteUrl}/`,
+    `${siteUrl}/**`,
+    `${siteUrl}/auth/callback`,
+    ...localUrls.flatMap((url) => [url, `${url}/`, `${url}/**`, `${url}/auth/callback`])
+  ].join(",");
   try {
     await managementRequest(token, "PATCH", `/projects/${projectRef}/config/auth`, {
       site_url: siteUrl,

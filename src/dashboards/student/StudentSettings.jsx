@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 import { fetchJson } from "../../lib/api";
 import { useSession } from "../../context/SessionContext";
+import { useCelebration } from "../../components/shared/Celebration";
+import { formatPracticeMs } from "../../utils/formatTime";
 
 export default function StudentSettings() {
   const { session, setSession, logout } = useSession();
+  const { setSoundEnabled } = useCelebration();
+  const [soundOn, setSoundOn] = useState(localStorage.getItem("edusg-sound") !== "off");
   const user = session?.user;
+  const chinese = session?.chineseProgress;
+  const timing = chinese?.timingSummary;
+  const rememberedTotal = Object.values(chinese?.rememberedWords || {}).flat().length;
   const [prefs, setPrefs] = useState(user?.notificationPrefs || { achievements: true, parentMessages: true, reminders: true });
   const [dailyTarget, setDailyTarget] = useState(user?.dailyMinutesTarget || 120);
   const [saved, setSaved] = useState(false);
@@ -36,6 +43,38 @@ export default function StudentSettings() {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="font-black">Chinese practice</div>
+        <div className="mt-3 space-y-2 text-sm">
+          {timing?.attemptCount > 0 ? (
+            <>
+              <div>
+                <span className="text-slate-500">Average time per question:</span>{" "}
+                {formatPracticeMs(timing.avgTimeMs)}
+              </div>
+              {chinese?.lastQuestionTimeMs != null && (
+                <div>
+                  <span className="text-slate-500">Last question:</span>{" "}
+                  {formatPracticeMs(chinese.lastQuestionTimeMs)}
+                </div>
+              )}
+              <div>
+                <span className="text-slate-500">Words remembered:</span> {rememberedTotal}
+              </div>
+              {timing.slowThresholdMs && timing.attemptCount >= 5 && (
+                <p className="text-xs leading-5 text-slate-500">
+                  Correct answers slower than {formatPracticeMs(timing.slowThresholdMs)} are not saved as remembered.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-slate-500">
+              Complete a few Chinese practice questions to see your average time here.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="font-black">Daily study goal (minutes)</div>
         <input
           type="number"
@@ -45,6 +84,23 @@ export default function StudentSettings() {
           onChange={(e) => setDailyTarget(Number(e.target.value))}
           className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2"
         />
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <label className="flex items-center justify-between">
+          <div>
+            <div className="font-black">Sound effects</div>
+            <div className="text-xs text-slate-500">Chimes for correct answers and celebrations</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={soundOn}
+            onChange={(e) => {
+              setSoundOn(e.target.checked);
+              setSoundEnabled(e.target.checked);
+            }}
+          />
+        </label>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">

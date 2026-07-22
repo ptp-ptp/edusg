@@ -1,10 +1,32 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { fetchJson, getUserId } from "../lib/api";
-import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import {
+  clearAuthCredentials,
+  getRememberDevice,
+  getSavedRole,
+  saveAuthCredentials,
+  setRememberDevice as persistRememberDevice
+} from "../lib/authStorage";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { probeOAuthProvider, startOAuthProvider } from "../lib/oauth";
 
 const SessionContext = createContext(null);
+const OAUTH_RETURN_KEY = "edusg-oauth-return";
 
 export const roleOptions = ["student", "parent", "admin"];
+
+function readOAuthReturnPath() {
+  const saved = sessionStorage.getItem(OAUTH_RETURN_KEY);
+  sessionStorage.removeItem(OAUTH_RETURN_KEY);
+  if (!saved) return "/";
+  try {
+    const url = new URL(saved, window.location.origin);
+    if (url.origin !== window.location.origin) return "/";
+    return `${url.pathname}${url.search}${url.hash}` || "/";
+  } catch {
+    return "/";
+  }
+}
 
 export function SessionProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -12,30 +34,64 @@ export function SessionProvider({ children }) {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authForm, setAuthForm] = useState({ email: "", password: "" });
+  const [rememberDevice, setRememberDeviceState] = useState(getRememberDevice);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [oauthProviders, setOauthProviders] = useState({ google: null, apple: null });
+  const [postLoginRole, setPostLoginRole] = useState(null);
   const requestedRole = new URLSearchParams(window.location.search).get("role");
-  const initialRole = roleOptions.includes(requestedRole) ? requestedRole : localStorage.getItem("edusg-role") || "student";
+  const initialRole = roleOptions.includes(requestedRole) ? requestedRole : getSavedRole() || "student";
   const [role, setRole] = useState(initialRole);
 
   useEffect(() => {
+    if (window.location.pathname === "/auth/callback") return;
     restoreSession();
   }, []);
 
-  async function applySession(data, nextRole) {
+  useEffect(() => {
+    if (!loginOpen || !isSupabaseConfigured) return;
+    let active = true;
+    (async () => {
+      const [google, apple] = await Promise.all([
+        probeOAuthProvider("google"),
+        probeOAuthProvider("apple")
+      ]);
+      if (!active) return;
+      setOauthProviders({
+        google: google.ok,
+        apple: apple.ok
+      });
+    })();
+    return () => {
+      active = false;
+    };
+  }, [loginOpen]);
+
+  function setRememberDevice(remember) {
+    setRememberDeviceState(remember);
+    persistRememberDevice(remember);
+  }
+
+  async function applySession(data, nextRole, remember = rememberDevice, { landing = true } = {}) {
     const userRoles = data.user?.roles?.length ? data.user.roles : [data.user?.role].filter(Boolean);
     const activeRole = userRoles.includes(nextRole) ? nextRole : data.user.role;
-    localStorage.setItem("edusg-user-id", data.user.id);
-    localStorage.setItem("edusg-role", activeRole);
+    saveAuthCredentials(data.user.id, activeRole, remember);
     setRole(activeRole);
     setSession(data);
     setAuthError("");
+    setLoginOpen(false);
+    if (landing && (activeRole === "parent" || activeRole === "admin")) {
+      setPostLoginRole(activeRole);
+    }
     setLoading(false);
     setOauthLoading(false);
     return activeRole;
   }
 
-  async function completeOAuthLogin() {
+  async function completeOAuthLogin(remember = getRememberDevice()) {
     if (!supabase) return false;
-    const { data: authData } = await supabase.auth.getSession();
+    const { data: authData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+
     const email = authData.session?.user?.email;
     if (!email) return false;
 
@@ -46,41 +102,75 @@ export function SessionProvider({ children }) {
         body: JSON.stringify({ email, provider })
       });
       await supabase.auth.signOut();
-      await applySession(data, data.user.role);
-      if (window.location.hash || window.location.search.includes("code=")) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
+      await applySession(data, data.user.role, remember);
       return true;
     } catch (error) {
       await supabase.auth.signOut();
       setAuthError(error.message || "Could not sign in with this account");
       setLoading(false);
       setOauthLoading(false);
-      if (window.location.hash) {
-        window.history.replaceState({}, document.title, window.location.pathname);
+      throw error;
+    }
+  }
+
+  async function finishOAuthCallback() {
+    setLoading(true);
+    setOauthLoading(true);
+    setAuthError("");
+
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error_description") || params.get("error");
+    if (oauthError) {
+      const message = decodeURIComponent(oauthError.replace(/\+/g, " "));
+      const friendly = /not enabled|unsupported provider/i.test(message)
+        ? "Google sign-in is not set up yet. Use your EduSG email and password instead."
+        : message;
+      setAuthError(friendly);
+      setLoading(false);
+      setOauthLoading(false);
+      setLoginOpen(true);
+      window.history.replaceState({}, document.title, "/auth/callback");
+      throw new Error(message);
+    }
+
+    try {
+      if (!supabase) throw new Error("Google sign-in is not configured on this site.");
+
+      const code = params.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) throw error;
       }
-      return true;
+
+      const remember = getRememberDevice();
+      await completeOAuthLogin(remember);
+      return readOAuthReturnPath();
+    } catch (error) {
+      setAuthError(error.message || "Google sign-in failed");
+      setLoading(false);
+      setOauthLoading(false);
+      setLoginOpen(true);
+      throw error;
     }
   }
 
   async function restoreSession() {
     setLoading(true);
     try {
-      if (await completeOAuthLogin()) return;
-
       const savedUserId = getUserId();
-      const savedRole = localStorage.getItem("edusg-role");
+      const savedRole = getSavedRole();
       if (savedUserId) {
         const query = savedRole ? `?role=${encodeURIComponent(savedRole)}` : "";
         const data = await fetchJson(`/session/${savedUserId}${query}`);
         const userRoles = data.user?.roles?.length ? data.user.roles : [data.user.role];
         const nextRole = userRoles.includes(savedRole) ? savedRole : data.user.role;
-        await applySession(data, nextRole);
+        await applySession(data, nextRole, getRememberDevice(), { landing: false });
         return;
       }
       setSession(null);
       setLoading(false);
     } catch {
+      clearAuthCredentials();
       setSession(null);
       setLoading(false);
     }
@@ -95,7 +185,7 @@ export function SessionProvider({ children }) {
         method: "POST",
         body: JSON.stringify(authForm)
       });
-      await applySession(data, data.user.role);
+      await applySession(data, data.user.role, rememberDevice);
     } catch (error) {
       setAuthError(error.message || "Login failed");
       setLoading(false);
@@ -110,7 +200,7 @@ export function SessionProvider({ children }) {
         method: "POST",
         body: JSON.stringify({ ...form, role: "student" })
       });
-      await applySession(data, data.user.role);
+      await applySession(data, data.user.role, rememberDevice);
     } catch (error) {
       setAuthError(error.message || "Registration failed");
       setLoading(false);
@@ -124,13 +214,15 @@ export function SessionProvider({ children }) {
       return;
     }
     setOauthLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: window.location.origin }
-    });
-    if (error) {
-      setAuthError(error.message);
+    persistRememberDevice(rememberDevice);
+    const returnPath = `${window.location.pathname}${window.location.search}`;
+    sessionStorage.setItem(OAUTH_RETURN_KEY, returnPath);
+    const result = await startOAuthProvider(provider);
+    if (!result.ok) {
+      setAuthError(result.message);
       setOauthLoading(false);
+      sessionStorage.removeItem(OAUTH_RETURN_KEY);
+      setOauthProviders((current) => ({ ...current, [provider]: false }));
     }
   }
 
@@ -141,7 +233,7 @@ export function SessionProvider({ children }) {
       method: "POST",
       body: JSON.stringify({ role: nextRole })
     });
-    await applySession(data, nextRole);
+    await applySession(data, nextRole, rememberDevice);
   }
 
   async function switchRole(nextRole) {
@@ -152,16 +244,25 @@ export function SessionProvider({ children }) {
     try {
       const savedUserId = getUserId();
       const data = await fetchJson(`/session/${savedUserId}?role=${encodeURIComponent(nextRole)}`);
-      await applySession(data, nextRole);
+      await applySession(data, nextRole, getRememberDevice());
     } catch (error) {
       setAuthError(error.message || "Could not switch role");
       setLoading(false);
     }
   }
 
+  function openLogin() {
+    setAuthError("");
+    setLoginOpen(true);
+  }
+
+  function closeLogin() {
+    setLoginOpen(false);
+    setAuthError("");
+  }
+
   function logout() {
-    localStorage.removeItem("edusg-user-id");
-    localStorage.removeItem("edusg-role");
+    clearAuthCredentials();
     if (supabase) supabase.auth.signOut();
     setSession(null);
     setLoading(false);
@@ -179,13 +280,22 @@ export function SessionProvider({ children }) {
         authError,
         authForm,
         setAuthForm,
+        rememberDevice,
+        setRememberDevice,
         loginWithCredentials,
         registerWithCredentials,
         loginWithOAuth,
         login,
         switchRole,
         logout,
-        restoreSession
+        restoreSession,
+        finishOAuthCallback,
+        oauthProviders,
+        loginOpen,
+        openLogin,
+        closeLogin,
+        postLoginRole,
+        clearPostLoginRole: () => setPostLoginRole(null)
       }}
     >
       {children}

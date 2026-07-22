@@ -1,7 +1,8 @@
+import "./loadEnv.js";
 import cors from "cors";
 import express from "express";
 import path from "path";
-import { readDb, writeDb, uploadQuestionImage, rootDir, isSupabaseEnabled } from "./db.js";
+import { readDb, readDbWithChinese, writeDb, writeChineseDb, writePlatformSettings, uploadQuestionImage, rootDir, isSupabaseEnabled } from "./db.js";
 import { verifyPassword, hashPassword, ensureUserAuthFields } from "./auth.js";
 import { buildAllStudentInsights, buildStudentInsight } from "./analytics.js";
 import { requireAuth, requireRole, getLinkedStudentIds, getUserRoles } from "./middleware/auth.js";
@@ -12,11 +13,48 @@ import {
   buildAdminDashboardPayload,
   recordAudit,
   checkAchievements,
-  incrementStudyMinutes
+  incrementStudyMinutes,
+  touchDailyStreak,
+  buildDailyQuest,
+  getTodayKey,
+  DAILY_QUEST_REWARD
 } from "./dashboardHelpers.js";
 import { englishP4Questions } from "./englishQuestions.js";
+import { normalizeChineseProgress, recordChinesePracticeAnswer } from "./chineseProgress.js";
+import {
+  listChineseGrades,
+  getPack,
+  savePack,
+  addWord,
+  updateWord,
+  deleteWord,
+  moveWord,
+  savePracticeGroups,
+  addThemeGroup,
+  updateThemeGroup,
+  deleteThemeGroup,
+  getP1TopicClusters,
+  saveP1TopicClusters,
+  getPublicChineseContent,
+  getReadings,
+  addReading,
+  updateReading,
+  deleteReading,
+  getWatchSeries,
+  addWatchSeries,
+  updateWatchSeries,
+  deleteWatchSeries,
+  entryLocalKey,
+  CHINESE_GRADE_KEYS,
+  READING_GRADE_KEYS
+} from "./chineseContent.js";
 
 const auth = requireAuth(readDb);
+
+async function withChineseDb(req, res, next) {
+  req.db = await readDbWithChinese();
+  next();
+}
 
 const app = express();
 
@@ -44,10 +82,9 @@ function questionStats(db) {
 function ensureChineseProgress(db, studentId) {
   if (!db.progress[studentId]) db.progress[studentId] = {};
   if (!db.progress[studentId].Chinese) {
-    db.progress[studentId].Chinese = { rememberedWords: {} };
-  }
-  if (!db.progress[studentId].Chinese.rememberedWords) {
-    db.progress[studentId].Chinese.rememberedWords = {};
+    db.progress[studentId].Chinese = normalizeChineseProgress();
+  } else {
+    db.progress[studentId].Chinese = normalizeChineseProgress(db.progress[studentId].Chinese);
   }
   return db.progress[studentId].Chinese;
 }
@@ -81,6 +118,35 @@ function ensureEnglishProgress(db, studentId, grade = "P4") {
   if (!progress.unlockedGames) progress.unlockedGames = ["word-quest"];
   if (!progress.topicMastery) progress.topicMastery = {};
   updateEnglishGameUnlocks(progress);
+  return progress;
+}
+
+function defaultMathProgress(grade = "P4") {
+  return {
+    grade,
+    adaptiveLevel: 1,
+    correctStreak: 0,
+    struggleStreak: 0,
+    answered: 0,
+    correct: 0,
+    studyMinutes: 0,
+    starsEarnedWeek: 0,
+    unlockedOlympiad: false,
+    topicMastery: {},
+    levelHistory: [1],
+    recentAnswers: [],
+    completedLessons: []
+  };
+}
+
+function ensureMathProgress(db, studentId, grade = "P4") {
+  if (!db.progress[studentId]) db.progress[studentId] = {};
+  if (!db.progress[studentId].Math) {
+    db.progress[studentId].Math = defaultMathProgress(grade);
+  }
+  const progress = db.progress[studentId].Math;
+  if (!progress.completedLessons) progress.completedLessons = [];
+  if (!progress.topicMastery) progress.topicMastery = {};
   return progress;
 }
 
@@ -464,20 +530,7 @@ app.post("/api/auth/register", async (req, res) => {
   db.users.push(user);
   if (role === "student") {
     db.progress[user.id] = {
-      Math: {
-        grade: user.grade || "P4",
-        adaptiveLevel: 1,
-        correctStreak: 0,
-        struggleStreak: 0,
-        answered: 0,
-        correct: 0,
-        studyMinutes: 0,
-        starsEarnedWeek: 0,
-        unlockedOlympiad: false,
-        topicMastery: {},
-        levelHistory: [1],
-        recentAnswers: []
-      },
+      Math: defaultMathProgress(user.grade || "P4"),
       English: defaultEnglishProgress(user.grade || "P4")
     };
   }
@@ -797,6 +850,7 @@ app.post("/api/answer", async (req, res) => {
 
   const accepted = [question.answer, ...(question.acceptedAnswers || [])].map(normalizeAnswer);
   const isCorrect = accepted.includes(normalizeAnswer(answer));
+  const previousLevel = progress.adaptiveLevel;
   progress.answered += 1;
   progress.correct += isCorrect ? 1 : 0;
   progress.correctStreak = isCorrect ? progress.correctStreak + 1 : 0;
@@ -811,6 +865,7 @@ app.post("/api/answer", async (req, res) => {
       progress.correctStreak = 0;
       progress.levelHistory.push(progress.adaptiveLevel);
     }
+    progress.starsEarnedWeek = (progress.starsEarnedWeek || 0) + 2;
   } else {
     progress.topicMastery[question.topic] = Math.max(10, (progress.topicMastery[question.topic] || 40) - 4);
     if (progress.struggleStreak >= 2 && progress.adaptiveLevel > 1) {
@@ -823,8 +878,13 @@ app.post("/api/answer", async (req, res) => {
   progress.unlockedOlympiad = progress.adaptiveLevel >= 8;
   incrementStudyMinutes(db, studentId, "Math", 2);
   const student = db.users.find((u) => u.id === studentId);
-  if (student) student.lastActiveAt = new Date().toISOString();
-  checkAchievements(db, studentId, progress, "Math");
+  const starsEarned = isCorrect ? 2 : 0;
+  if (student) {
+    student.lastActiveAt = new Date().toISOString();
+    if (starsEarned) student.stars = (student.stars || 0) + starsEarned;
+  }
+  const streakInfo = touchDailyStreak(db, studentId);
+  const newAchievements = checkAchievements(db, studentId, progress, "Math");
 
   db.answerEvents = db.answerEvents || [];
   db.answerEvents.push({
@@ -845,7 +905,84 @@ app.post("/api/answer", async (req, res) => {
     isCorrect,
     explanation: question.explanation,
     progress,
+    starsEarned,
+    stars: student?.stars || 0,
+    levelUp: progress.adaptiveLevel > previousLevel ? progress.adaptiveLevel : null,
+    newAchievements,
+    streak: streakInfo?.streak ?? student?.streak ?? 0,
+    student,
     nextQuestion: getNextQuestion(db, studentId)
+  });
+});
+
+app.post("/api/math/evaluate-working", async (req, res) => {
+  const db = await readDb();
+  const { questionId, answer, working } = req.body;
+  const question = db.questions.find((entry) => entry.id === questionId);
+  if (!question) return res.status(404).json({ error: "Question not found" });
+  if (!String(working || "").trim()) return res.status(400).json({ error: "Please write down your working steps first" });
+
+  const accepted = [question.answer, ...(question.acceptedAnswers || [])].map(normalizeAnswer);
+  const answerCorrect = accepted.includes(normalizeAnswer(answer));
+
+  let evaluation = null;
+  let usedAI = false;
+
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const response = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+          input: [
+            "You are a kind Singapore Primary 4 math olympiad coach. A student solved an equation problem and wrote down their working steps.",
+            "Check the working line by line. Find the FIRST step where the student went wrong (if any), explain the mistake simply, and show the correct way. Use short sentences a 10-year-old understands. Be encouraging.",
+            "Reply with JSON only, using exactly these keys:",
+            '{"verdict": "correct" | "partly-correct" | "incorrect", "firstErrorStep": string or null, "whatWentWrong": string or null, "explanation": string, "encouragement": string}',
+            "",
+            `Question: ${question.prompt}`,
+            `Correct final answer: ${question.answer}`,
+            `Model solution: ${question.explanation || "(not provided)"}`,
+            "",
+            `Student's final answer: ${answer || "(not given)"}`,
+            `Student's final answer is ${answerCorrect ? "CORRECT" : "WRONG"}.`,
+            "Student's working steps:",
+            String(working)
+          ].join("\n")
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.output_text || data.output?.flatMap((item) => item.content || []).map((part) => part.text || "").join("");
+        evaluation = JSON.parse(String(text || "").replace(/^```json|```$/g, "").trim());
+        usedAI = true;
+      }
+    } catch {
+      evaluation = null;
+    }
+  }
+
+  if (!evaluation) {
+    evaluation = {
+      verdict: answerCorrect ? "correct" : "incorrect",
+      firstErrorStep: null,
+      whatWentWrong: answerCorrect ? null : "The final answer does not match. Compare your steps with the model solution.",
+      explanation: question.explanation || "Compare each step of your working against the model solution.",
+      encouragement: answerCorrect
+        ? "Great job! Your answer is correct."
+        : "Good try! Check your working against the model solution and try again."
+    };
+  }
+
+  res.json({
+    isCorrect: answerCorrect,
+    correctAnswer: question.answer,
+    evaluation,
+    usedAI
   });
 });
 
@@ -874,11 +1011,17 @@ app.post("/api/english/answer", async (req, res) => {
 
   const accepted = [question.answer, ...(question.acceptedAnswers || [])].map(normalizeAnswer);
   const isCorrect = accepted.includes(normalizeAnswer(answer));
+  const previousLevel = progress.adaptiveLevel;
   applyEnglishAnswer(progress, question, isCorrect);
   incrementStudyMinutes(db, studentId, "English", 2);
   const student = db.users.find((u) => u.id === studentId);
-  if (student) student.lastActiveAt = new Date().toISOString();
-  checkAchievements(db, studentId, progress, "English");
+  const starsEarned = isCorrect ? 2 : 0;
+  if (student) {
+    student.lastActiveAt = new Date().toISOString();
+    if (starsEarned) student.stars = (student.stars || 0) + starsEarned;
+  }
+  const streakInfo = touchDailyStreak(db, studentId);
+  const newAchievements = checkAchievements(db, studentId, progress, "English");
 
   db.answerEvents = db.answerEvents || [];
   db.answerEvents.push({
@@ -900,6 +1043,12 @@ app.post("/api/english/answer", async (req, res) => {
     explanation: question.explanation,
     hint: question.hint,
     progress,
+    starsEarned,
+    stars: student?.stars || 0,
+    levelUp: progress.adaptiveLevel > previousLevel ? progress.adaptiveLevel : null,
+    newAchievements,
+    streak: streakInfo?.streak ?? student?.streak ?? 0,
+    student,
     nextQuestion: getNextEnglishQuestion(db, studentId, { mode: mode || "smart", grade, topic, game })
   });
 });
@@ -920,9 +1069,51 @@ app.post("/api/english/lesson-complete", async (req, res) => {
   res.json({ progress });
 });
 
+app.post("/api/math/lesson-complete", async (req, res) => {
+  const db = await readDb();
+  const { studentId, lessonKey } = req.body;
+  if (!studentId || !lessonKey) return res.status(400).json({ error: "Missing studentId or lessonKey" });
+  const student = db.users.find((entry) => entry.id === studentId && entry.role === "student");
+  const progress = ensureMathProgress(db, studentId, student?.grade || "P4");
+  const completed = new Set(progress.completedLessons || []);
+  completed.add(lessonKey);
+  progress.completedLessons = Array.from(completed);
+  const [, topic] = String(lessonKey).split("|");
+  if (topic) {
+    progress.topicMastery[topic] = Math.min(100, (progress.topicMastery[topic] || 30) + 10);
+  }
+  await writeDb(db);
+  res.json({ progress });
+});
+
+app.get("/api/chinese/content/:gradeKey", async (req, res) => {
+  const db = await readDb();
+  const gradeKey = String(req.params.gradeKey || "");
+  if (!CHINESE_GRADE_KEYS.includes(gradeKey)) {
+    return res.status(404).json({ error: "Unknown Chinese level" });
+  }
+  res.json(getPublicChineseContent(db, gradeKey));
+});
+
+app.get("/api/chinese/readings/:gradeKey", async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  if (!READING_GRADE_KEYS.includes(gradeKey)) {
+    return res.status(404).json({ error: "Unknown reading level" });
+  }
+  const db = await readDbWithChinese();
+  res.json({ gradeKey, readings: getReadings(db, gradeKey) });
+});
+
+app.get("/api/chinese/watch-series", async (req, res) => {
+  // Watch series live in platform_settings (core DB row), not chinese_content.
+  const db = await readDb();
+  res.set("Cache-Control", "no-store");
+  res.json({ series: getWatchSeries(db) });
+});
+
 app.post("/api/chinese/remember", async (req, res) => {
   const db = await readDb();
-  const { studentId, wordKey } = req.body;
+  const { studentId, wordKey, timeMs, correct } = req.body;
   if (!studentId || !wordKey) {
     return res.status(400).json({ error: "Missing studentId or wordKey" });
   }
@@ -931,12 +1122,24 @@ app.post("/api/chinese/remember", async (req, res) => {
   const [grade] = String(wordKey).split("|");
   if (!grade) return res.status(400).json({ error: "Invalid wordKey" });
 
+  if (typeof timeMs === "number" && typeof correct === "boolean") {
+    const result = recordChinesePracticeAnswer(chineseProgress, wordKey, { correct, timeMs });
+    await writeDb(db);
+    return res.json({
+      chineseProgress,
+      remembered: result.remembered,
+      slowResponse: result.slowResponse,
+      timeMs: result.timeMs,
+      timingSummary: result.timingSummary
+    });
+  }
+
   const remembered = new Set(chineseProgress.rememberedWords[grade] || []);
   remembered.add(wordKey);
   chineseProgress.rememberedWords[grade] = Array.from(remembered);
   await writeDb(db);
 
-  res.json({ chineseProgress });
+  res.json({ chineseProgress, remembered: true, slowResponse: false });
 });
 
 app.post("/api/messages", async (req, res) => {
@@ -1042,6 +1245,25 @@ app.post("/api/rewards/redeem", auth, requireRole("student"), async (req, res) =
   const reward = (req.db.rewardsCatalog || []).find((r) => r.id === rewardId);
   if (!reward) return res.status(404).json({ error: "Reward not found" });
   if ((req.user.stars || 0) < reward.cost) return res.status(400).json({ error: "Not enough stars" });
+
+  req.user.unlocks = req.user.unlocks || [];
+  if (reward.category === "powerup") {
+    req.user.streakFreezes = (req.user.streakFreezes || 0) + 1;
+  } else if (reward.category !== "treat") {
+    if (req.user.unlocks.includes(rewardId)) {
+      return res.status(400).json({ error: "Already owned" });
+    }
+    req.user.unlocks.push(rewardId);
+  }
+
+  if (reward.category === "game") {
+    const englishProgress = ensureEnglishProgress(req.db, req.user.id, req.user.grade);
+    englishProgress.unlockedGames = [
+      "word-quest", "grammar-ninja", "sentence-scramble", "vocab-match", "spelling-bee",
+      "story-builder", "comprehension-castle", "edit-escape", "psle-boss"
+    ];
+  }
+
   req.user.stars -= reward.cost;
   req.db.rewardRedemptions = req.db.rewardRedemptions || [];
   req.db.rewardRedemptions.push({
@@ -1051,7 +1273,33 @@ app.post("/api/rewards/redeem", auth, requireRole("student"), async (req, res) =
     at: new Date().toISOString()
   });
   await writeDb(req.db);
-  res.json({ stars: req.user.stars, reward });
+  res.json({
+    stars: req.user.stars,
+    reward,
+    unlocks: req.user.unlocks,
+    streakFreezes: req.user.streakFreezes || 0
+  });
+});
+
+app.get("/api/daily-quest", auth, requireRole("student"), async (req, res) => {
+  res.json(buildDailyQuest(req.db, req.user.id));
+});
+
+app.post("/api/daily-quest/claim", auth, requireRole("student"), async (req, res) => {
+  const quest = buildDailyQuest(req.db, req.user.id);
+  if (!quest.complete) return res.status(400).json({ error: "Finish all quests first" });
+  if (quest.claimed) return res.status(400).json({ error: "Already claimed today" });
+
+  req.user.dailyQuestClaims = req.user.dailyQuestClaims || {};
+  req.user.dailyQuestClaims[getTodayKey()] = true;
+  req.user.stars = (req.user.stars || 0) + DAILY_QUEST_REWARD;
+  await writeDb(req.db);
+
+  res.json({
+    stars: req.user.stars,
+    reward: DAILY_QUEST_REWARD,
+    quest: { ...quest, claimed: true }
+  });
 });
 
 app.get("/api/notifications", auth, async (req, res) => {
@@ -1090,6 +1338,204 @@ app.get("/api/admin/audit", auth, requireRole("admin"), async (req, res) => {
   res.json({ events: req.db.auditEvents || [] });
 });
 
+app.get("/api/admin/chinese", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  res.json({ grades: listChineseGrades(req.db) });
+});
+
+// Registered before "/api/admin/chinese/:gradeKey" so "watch-series" is not
+// treated as a grade key. Uses platform_settings so saves work without the
+// optional chinese_content Supabase column.
+app.get("/api/admin/chinese/watch-series", auth, requireRole("admin"), async (req, res) => {
+  const db = await readDb();
+  res.set("Cache-Control", "no-store");
+  res.json({ series: getWatchSeries(db) });
+});
+
+app.post("/api/admin/chinese/watch-series", auth, requireRole("admin"), async (req, res) => {
+  try {
+    const db = await readDb();
+    const series = addWatchSeries(db, req.body);
+    recordAudit(db, req.user.id, "chinese.watch.add", { title: req.body.title });
+    await writePlatformSettings(db, { includeAudit: true });
+    res.set("Cache-Control", "no-store");
+    res.json({ series });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch("/api/admin/chinese/watch-series/:seriesId", auth, requireRole("admin"), async (req, res) => {
+  try {
+    const db = await readDb();
+    const series = updateWatchSeries(db, req.params.seriesId, req.body);
+    recordAudit(db, req.user.id, "chinese.watch.update", { seriesId: req.params.seriesId });
+    await writePlatformSettings(db, { includeAudit: true });
+    res.set("Cache-Control", "no-store");
+    res.json({ series });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete("/api/admin/chinese/watch-series/:seriesId", auth, requireRole("admin"), async (req, res) => {
+  try {
+    const db = await readDb();
+    const series = deleteWatchSeries(db, req.params.seriesId);
+    recordAudit(db, req.user.id, "chinese.watch.delete", { seriesId: req.params.seriesId });
+    await writePlatformSettings(db, { includeAudit: true });
+    res.set("Cache-Control", "no-store");
+    res.json({ series });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.get("/api/admin/chinese/:gradeKey", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  if (!CHINESE_GRADE_KEYS.includes(gradeKey)) return res.status(404).json({ error: "Unknown level" });
+  const pack = getPack(req.db, gradeKey);
+  res.json({
+    pack,
+    p1TopicClusters: gradeKey === "P1A" || gradeKey === "P1B" ? getP1TopicClusters(req.db) : null
+  });
+});
+
+app.put("/api/admin/chinese/:gradeKey", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  if (!CHINESE_GRADE_KEYS.includes(gradeKey)) return res.status(404).json({ error: "Unknown level" });
+  const pack = savePack(req.db, gradeKey, req.body.pack || req.body);
+  recordAudit(req.db, req.user.id, "chinese.pack.save", { gradeKey });
+  await writeChineseDb(req.db, { includeAudit: true });
+  res.json({ pack });
+});
+
+app.post("/api/admin/chinese/:gradeKey/words", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  try {
+    const pack = addWord(req.db, gradeKey, req.body);
+    recordAudit(req.db, req.user.id, "chinese.word.add", { gradeKey, word: req.body.word });
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ pack });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch("/api/admin/chinese/:gradeKey/words/:localKey", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  const localKey = decodeURIComponent(req.params.localKey || "");
+  try {
+    const pack = req.body.lesson && Object.keys(req.body).length === 1
+      ? moveWord(req.db, gradeKey, localKey, req.body.lesson)
+      : updateWord(req.db, gradeKey, localKey, req.body);
+    recordAudit(req.db, req.user.id, "chinese.word.update", { gradeKey, localKey });
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ pack });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete("/api/admin/chinese/:gradeKey/words/:localKey", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  const localKey = decodeURIComponent(req.params.localKey || "");
+  try {
+    const pack = deleteWord(req.db, gradeKey, localKey);
+    recordAudit(req.db, req.user.id, "chinese.word.delete", { gradeKey, localKey });
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ pack });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch("/api/admin/chinese/:gradeKey/groups", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  const pack = savePracticeGroups(req.db, gradeKey, req.body);
+  recordAudit(req.db, req.user.id, "chinese.groups.save", { gradeKey });
+  await writeChineseDb(req.db, { includeAudit: true });
+  res.json({ pack });
+});
+
+app.post("/api/admin/chinese/:gradeKey/theme-groups", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  try {
+    const pack = addThemeGroup(req.db, gradeKey, req.body);
+    recordAudit(req.db, req.user.id, "chinese.theme.add", { gradeKey, id: req.body.id });
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ pack });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch("/api/admin/chinese/:gradeKey/theme-groups/:groupId", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  try {
+    const pack = updateThemeGroup(req.db, gradeKey, req.params.groupId, req.body);
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ pack });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete("/api/admin/chinese/:gradeKey/theme-groups/:groupId", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  const pack = deleteThemeGroup(req.db, gradeKey, req.params.groupId);
+  await writeChineseDb(req.db, { includeAudit: true });
+  res.json({ pack });
+});
+
+app.patch("/api/admin/chinese/topic-clusters", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const clusters = saveP1TopicClusters(req.db, req.body);
+  recordAudit(req.db, req.user.id, "chinese.topics.save", {});
+  await writeChineseDb(req.db, { includeAudit: true });
+  res.json({ p1TopicClusters: clusters });
+});
+
+app.get("/api/admin/chinese/readings/:gradeKey", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  if (!READING_GRADE_KEYS.includes(gradeKey)) return res.status(404).json({ error: "Unknown reading level" });
+  res.json({ gradeKey, readings: getReadings(req.db, gradeKey) });
+});
+
+app.post("/api/admin/chinese/readings/:gradeKey", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  try {
+    const readings = addReading(req.db, gradeKey, req.body);
+    recordAudit(req.db, req.user.id, "chinese.reading.add", { gradeKey, title: req.body.title });
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ gradeKey, readings });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch("/api/admin/chinese/readings/:gradeKey/:readingId", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  try {
+    const readings = updateReading(req.db, gradeKey, req.params.readingId, req.body);
+    recordAudit(req.db, req.user.id, "chinese.reading.update", { gradeKey, readingId: req.params.readingId });
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ gradeKey, readings });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete("/api/admin/chinese/readings/:gradeKey/:readingId", auth, requireRole("admin"), withChineseDb, async (req, res) => {
+  const gradeKey = String(req.params.gradeKey || "");
+  try {
+    const readings = deleteReading(req.db, gradeKey, req.params.readingId);
+    recordAudit(req.db, req.user.id, "chinese.reading.delete", { gradeKey, readingId: req.params.readingId });
+    await writeChineseDb(req.db, { includeAudit: true });
+    res.json({ gradeKey, readings });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 app.post("/api/science/answer", async (req, res) => {
   const db = await readDb();
   const { studentId, questionId, answer } = req.body;
@@ -1099,6 +1545,7 @@ app.post("/api/science/answer", async (req, res) => {
 
   const accepted = [question.answer, ...(question.acceptedAnswers || [])].map(normalizeAnswer);
   const isCorrect = accepted.includes(normalizeAnswer(answer));
+  const previousLevel = progress.adaptiveLevel;
   progress.answered += 1;
   progress.correct += isCorrect ? 1 : 0;
   progress.correctStreak = isCorrect ? progress.correctStreak + 1 : 0;
@@ -1113,6 +1560,7 @@ app.post("/api/science/answer", async (req, res) => {
       progress.correctStreak = 0;
       progress.levelHistory.push(progress.adaptiveLevel);
     }
+    progress.starsEarnedWeek = (progress.starsEarnedWeek || 0) + 2;
   } else {
     progress.topicMastery[question.topic] = Math.max(10, (progress.topicMastery[question.topic] || 40) - 4);
     if (progress.struggleStreak >= 2 && progress.adaptiveLevel > 1) {
@@ -1124,8 +1572,13 @@ app.post("/api/science/answer", async (req, res) => {
 
   incrementStudyMinutes(db, studentId, "Science", 2);
   const student = db.users.find((u) => u.id === studentId);
-  if (student) student.lastActiveAt = new Date().toISOString();
-  checkAchievements(db, studentId, progress, "Science");
+  const starsEarned = isCorrect ? 2 : 0;
+  if (student) {
+    student.lastActiveAt = new Date().toISOString();
+    if (starsEarned) student.stars = (student.stars || 0) + starsEarned;
+  }
+  const streakInfo = touchDailyStreak(db, studentId);
+  const newAchievements = checkAchievements(db, studentId, progress, "Science");
 
   db.answerEvents = db.answerEvents || [];
   db.answerEvents.push({
@@ -1141,11 +1594,21 @@ app.post("/api/science/answer", async (req, res) => {
   });
 
   await writeDb(db);
-  res.json({ isCorrect, explanation: question.explanation, progress });
+  res.json({
+    isCorrect,
+    explanation: question.explanation,
+    progress,
+    starsEarned,
+    stars: student?.stars || 0,
+    levelUp: progress.adaptiveLevel > previousLevel ? progress.adaptiveLevel : null,
+    newAchievements,
+    streak: streakInfo?.streak ?? student?.streak ?? 0,
+    student
+  });
 });
 
 app.patch("/api/users/me", auth, async (req, res) => {
-  const allowed = ["name", "avatar", "grade", "dailyMinutesTarget", "notificationPrefs", "currentSubject"];
+  const allowed = ["name", "avatar", "grade", "dailyMinutesTarget", "notificationPrefs", "currentSubject", "activeTheme"];
   for (const field of allowed) {
     if (field in req.body) req.user[field] = req.body[field];
   }
