@@ -192,12 +192,6 @@ function readStoredLearnWidth() {
 
 const CJK_RE = /[\u3400-\u9FFF\uF900-\uFAFF]/;
 
-function countChineseChars(text) {
-  let count = 0;
-  for (const ch of text) if (CJK_RE.test(ch)) count += 1;
-  return count;
-}
-
 /**
  * Parses the Vocabs tab text into a dictionary used for click-to-learn words.
  * Lines look like "石猴 (Shíhóu): Stone Monkey"; variants separated by "/" all
@@ -258,25 +252,21 @@ function tokenizeSubtitleBlock(text, dict, maxTermLength) {
   return tokens;
 }
 
-const ANCHOR_RE = /\[(?:(\d+):)?(\d{1,2}):(\d{2})\]\s*/g;
+// Supports both [0:16] / [00:16] and (0:16) / (00:16), with optional hours.
+const ANCHOR_RE = /[\[(](?:(\d+):)?(\d{1,2}):(\d{2})[\])]\s*/g;
 
 /**
- * Parses the subtitle into blocks with karaoke metadata. [m:ss] time anchors
- * may appear anywhere in the text (paragraph start or mid-sentence); they are
- * stripped from the displayed text and pin that exact spot to the video time.
- * Character offsets count Chinese characters only, since punctuation takes no
- * time to speak.
+ * Parses the subtitle into display blocks. Time cues like (00:16) or [0:16]
+ * are stripped from the Learn UI and stored as each line's startTime so the
+ * sentence only highlights when the YouTube clock reaches that cue.
  */
 function buildKaraokeBlocks(transcript, vocabsText) {
   const { dict, maxTermLength } = parseVocabDictionary(vocabsText);
   const blocks = [];
-  const anchors = [];
-  let charOffset = 0;
   for (const rawBlock of String(transcript || "").split(/\n+/)) {
     const rawText = rawBlock.trim();
     if (!rawText) continue;
 
-    // Strip anchors, remembering the clean-text index each one points at.
     const blockAnchors = [];
     let text = "";
     let lastIndex = 0;
@@ -285,10 +275,7 @@ function buildKaraokeBlocks(transcript, vocabsText) {
     while ((match = ANCHOR_RE.exec(rawText)) !== null) {
       text += rawText.slice(lastIndex, match.index);
       const hours = Number(match[1] || 0);
-      blockAnchors.push({
-        time: hours * 3600 + Number(match[2]) * 60 + Number(match[3]),
-        textIndex: text.length
-      });
+      blockAnchors.push(hours * 3600 + Number(match[2]) * 60 + Number(match[3]));
       lastIndex = match.index + match[0].length;
     }
     text += rawText.slice(lastIndex);
@@ -296,48 +283,29 @@ function buildKaraokeBlocks(transcript, vocabsText) {
     if (!text) continue;
 
     const index = blocks.length;
-    const isHeading = /^第.{1,4}部分/.test(text) || (index === 0 && text.length <= 20);
+    const isHeading = /^第.{1,4}部分/.test(text) || /^Part\s*\d+/i.test(text);
     const tokens = tokenizeSubtitleBlock(text, dict, maxTermLength);
-    let tokenOffset = charOffset;
-    const positionedTokens = tokens.map((token) => {
-      const weight = isHeading ? 0 : countChineseChars(token.text);
-      const positioned = { ...token, start: tokenOffset, end: tokenOffset + weight };
-      tokenOffset += weight;
-      return positioned;
-    });
-    for (const anchor of blockAnchors) {
-      const charAt = isHeading ? charOffset : charOffset + countChineseChars(text.slice(0, anchor.textIndex));
-      anchors.push({ time: anchor.time, char: charAt });
-    }
-    blocks.push({ text, isHeading, tokens: positionedTokens, charStart: charOffset, charEnd: tokenOffset });
-    charOffset = tokenOffset;
+    const startTime = isHeading ? null : blockAnchors.length ? blockAnchors[0] : null;
+    blocks.push({ text, isHeading, tokens, startTime, index });
   }
-  return { blocks, totalChars: charOffset, dict, anchors };
+  return { blocks, dict };
 }
 
 /**
- * Maps the current playback time to a character position in the subtitle.
- * Interpolates linearly between time anchors (implicitly 0:00 at the start and
- * the video duration at the end).
+ * Returns the subtitle line that should be active for the current YouTube time.
+ * A line starts highlighting only once playback reaches its cue, and stays
+ * active until the next timed line begins.
  */
-function timeToCharPos(time, duration, anchors, totalChars) {
-  if (!duration || totalChars === 0) return -1;
-  const points = [{ time: 0, char: 0 }];
-  for (const anchor of anchors) {
-    if (anchor.time <= duration) points.push(anchor);
+function findActiveSubtitleIndex(time, blocks) {
+  if (!Number.isFinite(time) || time < 0) return -1;
+  let activeIndex = -1;
+  for (let i = 0; i < blocks.length; i += 1) {
+    const startTime = blocks[i].startTime;
+    if (startTime == null || blocks[i].isHeading) continue;
+    if (time + 0.05 >= startTime) activeIndex = i;
+    else break;
   }
-  points.push({ time: duration, char: totalChars });
-  points.sort((a, b) => a.time - b.time || a.char - b.char);
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const from = points[i];
-    const to = points[i + 1];
-    if (time >= from.time && time <= to.time) {
-      const span = to.time - from.time;
-      const fraction = span > 0 ? (time - from.time) / span : 1;
-      return from.char + fraction * (to.char - from.char);
-    }
-  }
-  return time > duration ? totalChars : -1;
+  return activeIndex;
 }
 
 function WatchPlayerModal({ series, part, onClose }) {
@@ -364,7 +332,7 @@ function WatchPlayerModal({ series, part, onClose }) {
     () => buildKaraokeBlocks(part.transcript, part.vocabs),
     [part.transcript, part.vocabs]
   );
-  const charPos = timeToCharPos(playback.time, playback.duration, karaoke.anchors, karaoke.totalChars);
+  const activeSubtitleIndex = findActiveSubtitleIndex(playback.time, karaoke.blocks);
 
   useEffect(() => {
     if (!embedUrl) return undefined;
@@ -651,7 +619,11 @@ function WatchPlayerModal({ series, part, onClose }) {
                 style={{ fontSize: `${LEARN_FONT_SIZES[fontLevel]}px` }}
               >
                 {activeLearnTab?.[0] === "subtitle" ? (
-                  <KaraokeSubtitle blocks={karaoke.blocks} charPos={charPos} onWordClick={handleWordClick} />
+                  <KaraokeSubtitle
+                    blocks={karaoke.blocks}
+                    activeIndex={activeSubtitleIndex}
+                    onWordClick={handleWordClick}
+                  />
                 ) : activeLearnTab?.[0] === "vocabs" ? (
                   <VocabList text={activeLearnTab[2]} />
                 ) : (
@@ -691,50 +663,48 @@ function WatchPlayerModal({ series, part, onClose }) {
   );
 }
 
-function KaraokeSubtitle({ blocks, charPos, onWordClick }) {
-  const activeBlockIndex = blocks.findIndex(
-    (block) => !block.isHeading && charPos >= block.charStart && charPos < block.charEnd
-  );
+function KaraokeSubtitle({ blocks, activeIndex, onWordClick }) {
   const activeBlockRef = useRef(null);
   const lastScrolledRef = useRef(-1);
 
   useEffect(() => {
-    if (activeBlockIndex < 0 || activeBlockIndex === lastScrolledRef.current) return;
-    lastScrolledRef.current = activeBlockIndex;
+    if (activeIndex < 0 || activeIndex === lastScrolledRef.current) return;
+    lastScrolledRef.current = activeIndex;
     activeBlockRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [activeBlockIndex]);
+  }, [activeIndex]);
 
   return (
     <div className="space-y-2.5 px-4 py-4">
       {blocks.map((block, index) => {
         if (block.isHeading) {
           return (
-            <h4 key={index} className="chinese-learn-text pt-3 text-[1.12em] font-black leading-snug text-coral first:pt-0">
+            <h4
+              key={index}
+              className="chinese-learn-text pt-3 text-[1.12em] font-black leading-snug text-coral first:pt-0"
+            >
               {block.text}
             </h4>
           );
         }
-        const isActiveBlock = index === activeBlockIndex;
+        const isActiveBlock = index === activeIndex;
+        const isPastBlock = activeIndex >= 0 && index < activeIndex;
         return (
           <p
             key={index}
             ref={isActiveBlock ? activeBlockRef : undefined}
             className={
-              "chinese-learn-text rounded-md text-[1.05em] leading-[2.05] transition-colors " +
-              (isActiveBlock ? "bg-sun/10 text-slate-800" : "text-slate-800")
+              "chinese-learn-text rounded-md px-2 py-1 text-[1.05em] leading-[2.05] transition-colors " +
+              (isActiveBlock
+                ? "bg-sun/20 text-slate-900 ring-1 ring-coral/25"
+                : isPastBlock
+                  ? "text-slate-500"
+                  : "text-slate-800")
             }
           >
             {block.tokens.map((token, tokenIndex) => {
               if (!token.chinese) {
-                const isPast = charPos > 0 && charPos >= token.start;
-                return (
-                  <span key={tokenIndex} className={isPast ? "text-coral" : undefined}>
-                    {token.text}
-                  </span>
-                );
+                return <span key={tokenIndex}>{token.text}</span>;
               }
-              const isActive = charPos >= token.start && charPos < token.end;
-              const isPast = !isActive && charPos >= token.end && token.end > token.start;
               return (
                 <span
                   key={tokenIndex}
@@ -749,12 +719,10 @@ function KaraokeSubtitle({ blocks, charPos, onWordClick }) {
                   }}
                   className={
                     "cursor-pointer rounded-sm transition-colors hover:bg-coral/15 " +
-                    (isActive
-                      ? "bg-coral text-white"
-                      : isPast
-                        ? "text-coral"
-                        : "text-slate-800") +
-                    (token.inDict ? " underline decoration-coral/40 decoration-dotted underline-offset-[0.35em]" : "")
+                    (isActiveBlock ? "text-slate-900" : isPastBlock ? "text-slate-500" : "text-slate-800") +
+                    (token.inDict
+                      ? " underline decoration-coral/40 decoration-dotted underline-offset-[0.35em]"
+                      : "")
                   }
                 >
                   {token.text}
