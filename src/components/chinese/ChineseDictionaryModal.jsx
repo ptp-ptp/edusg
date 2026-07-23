@@ -308,9 +308,9 @@ export default function ChineseDictionaryModal({ onClose }) {
           {loadError ? (
             <div className="grid h-full place-items-center p-6 text-center text-slate-600">{loadError}</div>
           ) : (
-            <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-2 lg:grid-rows-1">
-              {/* Left: fixed draw workspace — never grows with results */}
-              <section className="flex min-h-0 flex-col gap-3 overflow-hidden border-b border-slate-200 p-3 sm:p-4 lg:border-b-0 lg:border-r">
+            <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-2 lg:grid-rows-1">
+              {/* Left: draw workspace — large pad on phone, full column on desktop */}
+              <section className="flex shrink-0 flex-col gap-2 overflow-hidden border-b border-slate-200 p-2.5 sm:gap-3 sm:p-4 lg:h-full lg:min-h-0 lg:border-b-0 lg:border-r">
                 <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
                   <div className="text-sm font-black text-slate-800">
                     Word{" "}
@@ -338,12 +338,12 @@ export default function ChineseDictionaryModal({ onClose }) {
                   </div>
                 </div>
 
-                <div className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 px-3">
+                <div className="flex h-11 shrink-0 items-center gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 px-3 sm:h-14">
                   {wordBuffer ? (
                     [...wordBuffer].map((ch, index) => (
                       <span
                         key={`${ch}-${index}`}
-                        className="chinese-character-display chinese-handwriting shrink-0 text-3xl"
+                        className="chinese-character-display chinese-handwriting shrink-0 text-2xl sm:text-3xl"
                       >
                         {ch}
                       </span>
@@ -355,7 +355,7 @@ export default function ChineseDictionaryModal({ onClose }) {
 
                 <div
                   ref={canvasWrapRef}
-                  className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-[#fffef8]"
+                  className="relative mx-auto aspect-square w-full max-h-[min(58dvh,28rem)] overflow-hidden rounded-xl border border-slate-200 bg-[#fffef8] sm:max-h-[min(60dvh,32rem)] lg:mx-0 lg:aspect-auto lg:max-h-none lg:min-h-0 lg:flex-1"
                 >
                   <canvas
                     ref={canvasRef}
@@ -402,10 +402,10 @@ export default function ChineseDictionaryModal({ onClose }) {
                 </div>
 
                 <div className="shrink-0">
-                  <div className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                  <div className="mb-1.5 text-xs font-black uppercase tracking-wide text-slate-500 sm:mb-2">
                     Candidates — tap to add
                   </div>
-                  <div className="flex h-[4.75rem] items-center gap-2 overflow-x-auto">
+                  <div className="flex h-14 items-center gap-2 overflow-x-auto sm:h-[4.75rem]">
                     {candidates.length === 0 ? (
                       <span className="text-sm text-slate-400">
                         {hasInk ? "Keep drawing…" : "Draw a character above"}
@@ -417,7 +417,7 @@ export default function ChineseDictionaryModal({ onClose }) {
                           type="button"
                           disabled={wordBuffer.length >= MAX_CHARS}
                           onClick={() => appendCharacter(item.character)}
-                          className="chinese-character-display chinese-handwriting h-16 w-16 shrink-0 text-3xl transition hover:border-coral hover:shadow disabled:opacity-40"
+                          className="chinese-character-display chinese-handwriting h-12 w-12 shrink-0 text-2xl transition hover:border-coral hover:shadow disabled:opacity-40 sm:h-16 sm:w-16 sm:text-3xl"
                           title={`Score ${Math.round((item.score || 0) * 100) / 100}`}
                         >
                           {item.character}
