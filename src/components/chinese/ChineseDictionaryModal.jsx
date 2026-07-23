@@ -281,13 +281,13 @@ export default function ChineseDictionaryModal({ onClose }) {
         aria-modal="true"
         aria-labelledby="dictionary-title"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-3 py-2.5 sm:items-start sm:px-5 sm:py-4">
           <div className="min-w-0">
             <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide text-coral">
               <BookMarked className="h-4 w-4" />
               Dictionary
             </div>
-            <h3 id="dictionary-title" className="mt-1 text-lg font-black text-slate-800 sm:text-2xl">
+            <h3 id="dictionary-title" className="mt-0.5 text-base font-black text-slate-800 sm:mt-1 sm:text-2xl">
               Draw to look up
             </h3>
             <p className="mt-1 hidden text-sm text-slate-500 sm:block">

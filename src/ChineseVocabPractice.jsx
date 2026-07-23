@@ -30,6 +30,15 @@ function cx(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
+/** Permanent Chinese student tabs — Dictionary is required and always first. */
+const CHINESE_MAIN_TABS = [
+  ["dictionary", BookMarked, "Dictionary"],
+  ["reading", BookOpenText, "Reading"],
+  ["vocab", Languages, "Vocab"],
+  ["watch", MonitorPlay, "Watch"],
+  ["game", Trophy, "Game"]
+];
+
 export default function ChineseVocabPractice({
   grade,
   setGrade,
@@ -233,13 +242,7 @@ export default function ChineseVocabPractice({
         </div>
 
         <div className="mt-4 grid grid-cols-5 gap-1 rounded-lg bg-white/20 p-1 md:gap-2">
-          {[
-            ["dictionary", BookMarked, "Dictionary"],
-            ["reading", BookOpenText, "Reading"],
-            ["vocab", Languages, "Vocab"],
-            ["watch", MonitorPlay, "Watch"],
-            ["game", Trophy, "Game"]
-          ].map(([option, Icon, label]) => (
+          {CHINESE_MAIN_TABS.map(([option, Icon, label]) => (
             <button
               key={option}
               type="button"
@@ -257,6 +260,7 @@ export default function ChineseVocabPractice({
                   ? "bg-white text-coral"
                   : "text-white"
               )}
+              aria-pressed={mode === option || (option === "dictionary" && dictionaryOpen)}
             >
               <Icon className="h-4 w-4 shrink-0" />
               {label}
