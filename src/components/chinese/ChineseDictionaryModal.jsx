@@ -13,10 +13,12 @@ function cx(...classes) {
 
 export default function ChineseDictionaryModal({ onClose }) {
   const canvasRef = useRef(null);
+  const canvasWrapRef = useRef(null);
   const strokesRef = useRef([]);
   const currentStrokeRef = useRef(null);
   const drawingRef = useRef(false);
   const recognizeTimerRef = useRef(null);
+  const canvasSizeRef = useRef({ width: 0, height: 0 });
 
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -36,6 +38,18 @@ export default function ChineseDictionaryModal({ onClose }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  // Lock page scroll while the dictionary is open so the pad can't jump.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const previousOverscroll = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.overscrollBehavior = previousOverscroll;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,24 +81,11 @@ export default function ChineseDictionaryModal({ onClose }) {
     setSelected(result.exact[0] || result.suggestions[0] || null);
   }, [wordBuffer, candidateHistory]);
 
-  const redrawCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
+  const paintStrokes = useCallback((ctx, width, height) => {
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#fffef8";
     ctx.fillRect(0, 0, width, height);
 
-    // Light guide square
     ctx.strokeStyle = "#e6dcc8";
     ctx.lineWidth = 1;
     ctx.setLineDash([6, 6]);
@@ -112,12 +113,58 @@ export default function ChineseDictionaryModal({ onClose }) {
     }
   }, []);
 
+  const syncCanvasSize = useCallback(
+    (force = false) => {
+      const canvas = canvasRef.current;
+      const wrap = canvasWrapRef.current;
+      if (!canvas || !wrap) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.floor(wrap.clientWidth));
+      const height = Math.max(1, Math.floor(wrap.clientHeight));
+      const prev = canvasSizeRef.current;
+      const sizeChanged = prev.width !== width || prev.height !== height;
+
+      if (!force && !sizeChanged) {
+        const ctx = canvas.getContext("2d");
+        paintStrokes(ctx, width, height);
+        return;
+      }
+
+      canvasSizeRef.current = { width, height };
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paintStrokes(ctx, width, height);
+    },
+    [paintStrokes]
+  );
+
+  const redrawCanvas = useCallback(() => {
+    syncCanvasSize(false);
+  }, [syncCanvasSize]);
+
   useEffect(() => {
-    redrawCanvas();
-    const onResize = () => redrawCanvas();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [redrawCanvas]);
+    syncCanvasSize(true);
+    const wrap = canvasWrapRef.current;
+    if (!wrap || typeof ResizeObserver === "undefined") {
+      const onResize = () => syncCanvasSize(true);
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
+    }
+
+    const observer = new ResizeObserver(() => {
+      // Ignore tiny sub-pixel jitter while drawing.
+      if (drawingRef.current) return;
+      syncCanvasSize(true);
+    });
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, [syncCanvasSize]);
 
   const scheduleRecognize = useCallback(() => {
     if (recognizeTimerRef.current) clearTimeout(recognizeTimerRef.current);
@@ -140,7 +187,10 @@ export default function ChineseDictionaryModal({ onClose }) {
   function pointerPos(event) {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    return [event.clientX - rect.left, event.clientY - rect.top];
+    const size = canvasSizeRef.current;
+    const scaleX = size.width / Math.max(1, rect.width);
+    const scaleY = size.height / Math.max(1, rect.height);
+    return [(event.clientX - rect.left) * scaleX, (event.clientY - rect.top) * scaleY];
   }
 
   function handlePointerDown(event) {
@@ -198,7 +248,6 @@ export default function ChineseDictionaryModal({ onClose }) {
       ...candidateHistory,
       candidates.map((item) => item.character).filter(Boolean)
     ];
-    // Keep history aligned with buffer length
     setCandidateHistory(nextHistory.slice(0, next.length));
     setWordBuffer(next);
     clearPad();
@@ -222,26 +271,26 @@ export default function ChineseDictionaryModal({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-ink/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[60] flex items-stretch justify-center bg-ink/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[92vh] sm:rounded-2xl"
+        className="flex h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-white shadow-2xl sm:h-[min(92dvh,880px)] sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="dictionary-title"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-5">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
           <div className="min-w-0">
             <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide text-coral">
               <BookMarked className="h-4 w-4" />
               Dictionary
             </div>
-            <h3 id="dictionary-title" className="mt-1 text-xl font-black text-slate-800 sm:text-2xl">
+            <h3 id="dictionary-title" className="mt-1 text-lg font-black text-slate-800 sm:text-2xl">
               Draw to look up
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 hidden text-sm text-slate-500 sm:block">
               Draw one character at a time (up to 3). Pick a match, then listen and read pinyin.
             </p>
           </div>
@@ -255,13 +304,14 @@ export default function ChineseDictionaryModal({ onClose }) {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-hidden">
           {loadError ? (
-            <div className="p-6 text-center text-slate-600">{loadError}</div>
+            <div className="grid h-full place-items-center p-6 text-center text-slate-600">{loadError}</div>
           ) : (
-            <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-2">
-              <section className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-2 lg:grid-rows-1">
+              {/* Left: fixed draw workspace — never grows with results */}
+              <section className="flex min-h-0 flex-col gap-3 overflow-hidden border-b border-slate-200 p-3 sm:p-4 lg:border-b-0 lg:border-r">
+                <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
                   <div className="text-sm font-black text-slate-800">
                     Word{" "}
                     <span className="font-semibold text-slate-500">
@@ -288,12 +338,12 @@ export default function ChineseDictionaryModal({ onClose }) {
                   </div>
                 </div>
 
-                <div className="flex min-h-[3.5rem] flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 px-3">
                   {wordBuffer ? (
                     [...wordBuffer].map((ch, index) => (
                       <span
                         key={`${ch}-${index}`}
-                        className="chinese-character-display chinese-handwriting text-3xl sm:text-4xl"
+                        className="chinese-character-display chinese-handwriting shrink-0 text-3xl"
                       >
                         {ch}
                       </span>
@@ -303,20 +353,25 @@ export default function ChineseDictionaryModal({ onClose }) {
                   )}
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-[#fffef8]">
+                <div
+                  ref={canvasWrapRef}
+                  className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-[#fffef8]"
+                >
                   <canvas
                     ref={canvasRef}
-                    className="h-56 w-full touch-none sm:h-64"
-                    style={{ cursor: ready && wordBuffer.length < MAX_CHARS ? "crosshair" : "not-allowed" }}
+                    className="absolute inset-0 h-full w-full touch-none"
+                    style={{
+                      cursor: ready && wordBuffer.length < MAX_CHARS ? "crosshair" : "not-allowed",
+                      touchAction: "none"
+                    }}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerCancel={handlePointerUp}
-                    onPointerLeave={handlePointerUp}
                   />
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={undoStroke}
@@ -336,23 +391,21 @@ export default function ChineseDictionaryModal({ onClose }) {
                     Clear pad
                   </button>
                   {!ready && (
-                    <span className="self-center text-xs font-semibold text-slate-400">Loading recognizer…</span>
+                    <span className="text-xs font-semibold text-slate-400">Loading recognizer…</span>
                   )}
-                  {recognizing && (
-                    <span className="self-center text-xs font-semibold text-coral">Recognizing…</span>
-                  )}
+                  {recognizing && <span className="text-xs font-semibold text-coral">Recognizing…</span>}
                   {wordBuffer.length >= MAX_CHARS && (
-                    <span className="self-center text-xs font-semibold text-amber-600">
-                      Max {MAX_CHARS} characters — backspace to change
+                    <span className="text-xs font-semibold text-amber-600">
+                      Max {MAX_CHARS} characters
                     </span>
                   )}
                 </div>
 
-                <div>
+                <div className="shrink-0">
                   <div className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">
                     Candidates — tap to add
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex h-[4.75rem] items-center gap-2 overflow-x-auto">
                     {candidates.length === 0 ? (
                       <span className="text-sm text-slate-400">
                         {hasInk ? "Keep drawing…" : "Draw a character above"}
@@ -364,7 +417,7 @@ export default function ChineseDictionaryModal({ onClose }) {
                           type="button"
                           disabled={wordBuffer.length >= MAX_CHARS}
                           onClick={() => appendCharacter(item.character)}
-                          className="chinese-character-display chinese-handwriting min-w-[3rem] text-3xl transition hover:border-coral hover:shadow disabled:opacity-40"
+                          className="chinese-character-display chinese-handwriting h-16 w-16 shrink-0 text-3xl transition hover:border-coral hover:shadow disabled:opacity-40"
                           title={`Score ${Math.round((item.score || 0) * 100) / 100}`}
                         >
                           {item.character}
@@ -375,22 +428,25 @@ export default function ChineseDictionaryModal({ onClose }) {
                 </div>
               </section>
 
-              <section className="space-y-4">
-                <div>
-                  <div className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">
-                    Matches
-                  </div>
+              {/* Right: results scroll independently */}
+              <section className="flex min-h-0 flex-col overflow-hidden p-3 sm:p-4">
+                <div className="mb-2 shrink-0 text-xs font-black uppercase tracking-wide text-slate-500">
+                  Matches
+                </div>
+
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
                   {!wordBuffer ? (
                     <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
                       Add 1–3 characters to see dictionary results.
                     </div>
                   ) : results.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
-                      No dictionary entry for <span className="font-bold text-slate-700">{wordBuffer}</span> yet.
-                      Try another candidate character.
+                      No dictionary entry for{" "}
+                      <span className="font-bold text-slate-700">{wordBuffer}</span> yet. Try another
+                      candidate character.
                     </div>
                   ) : (
-                    <ul className="max-h-48 space-y-2 overflow-y-auto sm:max-h-56">
+                    <ul className="space-y-2">
                       {results.map((entry) => {
                         const active = selected?.id === entry.id;
                         return (
@@ -409,7 +465,9 @@ export default function ChineseDictionaryModal({ onClose }) {
                                 {entry.word}
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span className="block font-semibold text-teal-700">{entry.pinyin || "—"}</span>
+                                <span className="block font-semibold text-teal-700">
+                                  {entry.pinyin || "—"}
+                                </span>
                                 <span className="mt-0.5 block text-sm leading-snug text-slate-700">
                                   {entry.english}
                                 </span>
@@ -430,9 +488,9 @@ export default function ChineseDictionaryModal({ onClose }) {
                       })}
                     </ul>
                   )}
-                </div>
 
-                {selected && <SelectedEntryDetail entry={selected} />}
+                  {selected && <SelectedEntryDetail entry={selected} />}
+                </div>
               </section>
             </div>
           )}
