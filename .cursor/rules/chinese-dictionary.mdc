@@ -1,0 +1,14 @@
+---
+description: Permanent Chinese Dictionary tab requirement for EduSG
+alwaysApply: true
+---
+
+# Chinese Dictionary — permanent
+
+- The student Chinese page MUST always show **Dictionary** as the **first** tab.
+- Required tab order: **Dictionary → Reading → Vocab → Watch → Game**
+- Never remove, hide, rename away, or skip Dictionary.
+- Never deploy a build to `edusg-ten.vercel.app` / Vercel project `edusg` that lacks Dictionary.
+- Dictionary opens the offline draw-to-lookup modal (`ChineseDictionaryModal`); keep `hanzilookup-js`, handwriting data, and CEDICT assets.
+- If production was overwritten by another deploy, restore Dictionary immediately from the Dictionary-enabled branch before other work.
+- Tabs are defined in `CHINESE_MAIN_TABS` in `src/ChineseVocabPractice.jsx` — Dictionary stays first there.
