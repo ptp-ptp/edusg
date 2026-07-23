@@ -9,6 +9,7 @@ import {
   SubjectProgressCard,
   TrendSparkline
 } from "../../components/shared/DashboardWidgets";
+import StudentInsightTabs from "../../components/insights/StudentInsightTabs";
 
 const subjectColors = { Math: "bg-teal", English: "bg-blue-500", Science: "bg-leaf", Chinese: "bg-coral" };
 
@@ -50,7 +51,15 @@ export default function ParentChildDetail() {
       <TrendSparkline data={insight.commitment.weeklyTrend || []} label="7-day activity" />
 
       <section>
-        <h2 className="font-black">Subjects</h2>
+        <h2 className="font-black">Subject insights</h2>
+        <p className="mt-1 text-sm text-slate-500">Engagement, mastery and stars for each subject.</p>
+        <div className="mt-3">
+          <StudentInsightTabs studentId={id} audience="parent" />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-black">Subjects at a glance</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {subjects.map((item) => (
             <SubjectProgressCard key={item.subject} {...item} color={subjectColors[item.subject]} />

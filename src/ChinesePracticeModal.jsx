@@ -271,7 +271,12 @@ export default function ChinesePracticeModal({
       setFeedback(null);
     }, correct && remembered ? 1400 : 2200);
 
-    void onWordRemembered?.(wordKey(entryGrade(currentWord, practiceGrade), currentWord), { correct, timeMs }).then((result) => {
+    void onWordRemembered?.(wordKey(entryGrade(currentWord, practiceGrade), currentWord), {
+      correct,
+      timeMs,
+      durationMs: timeMs,
+      starsEarned: correct && remembered ? 1 : 0
+    }).then((result) => {
       if (!result) return;
       setFeedback((current) => {
         if (!current) return current;

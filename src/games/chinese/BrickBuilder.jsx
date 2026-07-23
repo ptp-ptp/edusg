@@ -13,7 +13,7 @@ const BRICK_COLORS = ["#f87171", "#fb923c", "#facc15", "#4ade80", "#38bdf8", "#a
 const TOWER_SIZE = 8;
 
 export default function BrickBuilder({ grade, words, rememberedSet, onWordRemembered, onExit }) {
-  const round = useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize: TOWER_SIZE });
+  const round = useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize: TOWER_SIZE, gameId: "bricks" });
   const [selected, setSelected] = useState("");
   const [feedback, setFeedback] = useState(null);
   const [wobble, setWobble] = useState(false);

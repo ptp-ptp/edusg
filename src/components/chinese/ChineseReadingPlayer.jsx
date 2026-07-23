@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, BookOpen, Pause, Play, Square, Volume2 } from "lucide-react";
 import { speakChineseWord } from "../../utils/chinesePronunciation.js";
+import { createActivitySession } from "../../lib/activityApi.js";
 
 function cx(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -33,10 +34,24 @@ export default function ChineseReadingPlayer({ reading, onBack }) {
   const speedRef = useRef(speed);
   speedRef.current = speed;
   const containerRef = useRef(null);
+  const readSessionRef = useRef(null);
 
   const levels = Array.isArray(reading.levels) && reading.levels.length > 0 ? reading.levels : null;
   const passage = levels ? levels[Math.min(levelIndex, levels.length - 1)] : reading;
   const sentences = passage.sentences || [];
+
+  useEffect(() => {
+    readSessionRef.current = createActivitySession({
+      subject: "Chinese",
+      kind: "read",
+      mode: "reading-player",
+      meta: { readingId: reading?.id || reading?.title || "", title: reading?.title || "" }
+    });
+    return () => {
+      void readSessionRef.current?.end({ minMs: 3000 });
+      readSessionRef.current = null;
+    };
+  }, [reading?.id, reading?.title]);
 
   const { flattened, sentenceMeta } = useMemo(() => {
     const flat = [];

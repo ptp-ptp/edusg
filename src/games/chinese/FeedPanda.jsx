@@ -12,7 +12,7 @@ function cx(...classes) {
 const ROUND_SIZE = 10;
 
 export default function FeedPanda({ grade, words, rememberedSet, onWordRemembered, onExit }) {
-  const round = useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize: ROUND_SIZE });
+  const round = useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize: ROUND_SIZE, gameId: "panda" });
   const [busy, setBusy] = useState(false);
   const [flyIndex, setFlyIndex] = useState(null);
   const [chomping, setChomping] = useState(false);

@@ -1,13 +1,20 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { pickGameWords, shuffle, wordKey } from "../../data/chinese/index.js";
 import { playCorrectSound, playWrongSound } from "../../utils/practiceSounds.js";
+import { trackActivity } from "../../lib/activityApi.js";
+
+export function starsForRound(wrongCount) {
+  if (wrongCount === 0) return 3;
+  if (wrongCount <= 3) return 2;
+  return 1;
+}
 
 /**
  * Shared round state for Chinese word games.
  * Picks unremembered words first, tracks score/streak and
  * saves correct answers through onWordRemembered.
  */
-export function useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize = 8 }) {
+export function useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize = 8, gameId = "game" }) {
   const [queue, setQueue] = useState([]);
   const [total, setTotal] = useState(0);
   const [started, setStarted] = useState(false);
@@ -15,6 +22,8 @@ export function useGameRound({ words, grade, rememberedSet, onWordRemembered, ro
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
+  const startedAtRef = useRef(0);
+  const reportedRef = useRef(false);
 
   const currentWord = queue[0] || null;
   const finished = started && queue.length === 0;
@@ -28,6 +37,8 @@ export function useGameRound({ words, grade, rememberedSet, onWordRemembered, ro
     setBestStreak(0);
     setWrongCount(0);
     setStarted(true);
+    startedAtRef.current = Date.now();
+    reportedRef.current = false;
   }, [words, rememberedSet, grade, roundSize]);
 
   const registerCorrect = useCallback(
@@ -60,6 +71,20 @@ export function useGameRound({ words, grade, rememberedSet, onWordRemembered, ro
     });
   }, []);
 
+  useEffect(() => {
+    if (!finished || reportedRef.current) return;
+    reportedRef.current = true;
+    const durationMs = Math.max(1000, Date.now() - (startedAtRef.current || Date.now()));
+    trackActivity({
+      subject: "Chinese",
+      kind: "game",
+      mode: gameId,
+      meta: { gameId, score, wrongCount, total },
+      durationMs,
+      starsEarned: starsForRound(wrongCount)
+    });
+  }, [finished, gameId, score, wrongCount, total]);
+
   return {
     currentWord,
     queueLength: queue.length,
@@ -88,10 +113,4 @@ export function buildCharacterOptions(words, target, count = 4) {
     if (distractors.length >= count - 1) break;
   }
   return shuffle([target, ...distractors]);
-}
-
-export function starsForRound(wrongCount) {
-  if (wrongCount === 0) return 3;
-  if (wrongCount <= 3) return 2;
-  return 1;
 }

@@ -61,6 +61,8 @@ import ChineseContentAdmin from "./components/admin/ChineseContentAdmin.jsx";
 import { fetchJson, cx } from "./lib/api.js";
 import { getCachedQuestions, getEnglishQuestions, getMathQuestions, getScienceQuestions, prefetchPracticeQuestions } from "./lib/questionStore.js";
 import { buildChineseProgressView, pickChineseStrengthsAndFocus } from "./utils/chineseProgressStats.js";
+import StudentInsightTabs from "./components/insights/StudentInsightTabs.jsx";
+import StudentSearchSelect from "./components/insights/StudentSearchSelect.jsx";
 
 const roleOptions = ["student", "parent", "admin"];
 
@@ -347,11 +349,23 @@ export function StudentLearningApp() {
       body.timeMs = practiceMeta.timeMs;
       body.correct = practiceMeta.correct;
     }
+    if (practiceMeta && typeof practiceMeta.durationMs === "number") {
+      body.durationMs = practiceMeta.durationMs;
+    }
+    if (practiceMeta && typeof practiceMeta.starsEarned === "number") {
+      body.starsEarned = practiceMeta.starsEarned;
+    }
     const result = await fetchJson("/chinese/remember", {
       method: "POST",
       body: JSON.stringify(body)
     });
-    setSession((current) => ({ ...current, chineseProgress: result.chineseProgress }));
+    setSession((current) => ({
+      ...current,
+      chineseProgress: result.chineseProgress,
+      student: current.student
+        ? { ...current.student, stars: result.stars ?? current.student.stars }
+        : current.student
+    }));
     return result;
   }
 
@@ -2741,7 +2755,7 @@ function ScoreBadge({ score, label, tone = "teal" }) {
 function StudentInsightsDashboard({ insights, selectedStudentId, onSelectStudent, onRefresh }) {
   const students = insights?.students || [];
   const summary = insights?.summary || {};
-  const selected = students.find((item) => item.user.id === selectedStudentId) || students[0] || null;
+  const selectedId = selectedStudentId || students[0]?.user?.id || "";
 
   useEffect(() => {
     if (!selectedStudentId && students[0]) onSelectStudent(students[0].user.id);
@@ -2751,8 +2765,8 @@ function StudentInsightsDashboard({ insights, selectedStudentId, onSelectStudent
     <section className="mt-5 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black">Student Intelligence & Commitment</h2>
-          <p className="mt-1 text-sm text-slate-500">See how smart each learner is performing and how committed they are to practice.</p>
+          <h2 className="text-xl font-black">Student Insights</h2>
+          <p className="mt-1 text-sm text-slate-500">Search a student, then explore Overview and per-subject scientific analytics.</p>
         </div>
         <button type="button" onClick={onRefresh} className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:border-teal">
           Refresh
@@ -2766,141 +2780,9 @@ function StudentInsightsDashboard({ insights, selectedStudentId, onSelectStudent
         <AdminMetric icon={Target} label="At Risk" value={summary.atRiskCount || 0} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-5 py-4">
-            <h3 className="font-black">All Students</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Grade</th>
-                  <th className="px-4 py-3">Smart Score</th>
-                  <th className="px-4 py-3">Commitment</th>
-                  <th className="px-4 py-3">Accuracy</th>
-                  <th className="px-4 py-3">Level</th>
-                  <th className="px-4 py-3">Active 7d</th>
-                  <th className="px-4 py-3">Last Active</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((item) => (
-                  <tr
-                    key={item.user.id}
-                    onClick={() => onSelectStudent(item.user.id)}
-                    className={cx(
-                      "cursor-pointer border-t border-slate-100 transition hover:bg-slate-50",
-                      selected?.user.id === item.user.id && "bg-teal/5"
-                    )}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-black text-slate-800">{item.user.name}</div>
-                      <div className="text-xs text-slate-500">{item.user.email}</div>
-                    </td>
-                    <td className="px-4 py-3 font-bold">{item.user.grade || "-"}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-black text-teal">{item.smartness.score}</div>
-                      <div className="text-xs text-slate-500">{item.smartness.label}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-black text-coral">{item.commitment.score}</div>
-                      <div className="text-xs text-slate-500">{item.commitment.label}</div>
-                    </td>
-                    <td className="px-4 py-3 font-bold">{item.smartness.overallAccuracy}%</td>
-                    <td className="px-4 py-3 font-bold">L{item.smartness.adaptiveLevel}</td>
-                    <td className="px-4 py-3 font-bold">{item.commitment.activeDays7} days</td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      {item.commitment.lastActiveAt ? new Date(item.commitment.lastActiveAt).toLocaleDateString() : "Never"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {students.length === 0 && <div className="px-5 py-10 text-center text-sm text-slate-500">No student data yet.</div>}
-          </div>
-        </div>
+      <StudentSearchSelect students={students} value={selectedId} onChange={onSelectStudent} />
 
-        {selected && (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <Avatar label={selected.user.avatar || selected.user.name?.slice(0, 2)} />
-                <div>
-                  <h3 className="text-lg font-black">{selected.user.name}</h3>
-                  <p className="text-sm text-slate-500">{selected.user.email}</p>
-                  {selected.parent && <p className="text-xs text-slate-400">Parent: {selected.parent.name}</p>}
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <ScoreBadge score={selected.smartness.score} label="Smart Score" />
-                <ScoreBadge score={selected.commitment.score} label="Commitment Score" tone="coral" />
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h4 className="flex items-center gap-2 font-black">
-                <Brain className="h-4 w-4 text-teal" /> How smart is this student?
-              </h4>
-              <div className="mt-4 grid gap-2 text-sm">
-                <InsightRow label="Overall accuracy" value={`${selected.smartness.overallAccuracy}%`} />
-                <InsightRow label="Topic mastery avg" value={`${selected.smartness.avgMastery}%`} />
-                <InsightRow label="Hard questions (L7+)" value={`${selected.smartness.hardAccuracy}% (${selected.smartness.hardQuestionsAttempted} attempts)`} />
-                <InsightRow label="Adaptive level" value={`Level ${selected.smartness.adaptiveLevel}`} />
-                <InsightRow label="Recent accuracy trend" value={`${selected.smartness.accuracyTrend >= 0 ? "+" : ""}${selected.smartness.accuracyTrend}%`} />
-                <InsightRow label="Olympiad ready" value={selected.smartness.olympiadReady ? "Yes" : "Not yet"} />
-              </div>
-              <div className="mt-4">
-                <p className="text-xs font-black uppercase text-slate-500">Topic mastery</p>
-                <div className="mt-2 space-y-2">
-                  {Object.entries(selected.smartness.topicMastery).map(([topic, value]) => (
-                    <div key={topic}>
-                      <div className="flex justify-between text-xs font-bold text-slate-600">
-                        <span>{topic}</span>
-                        <span>{value}%</span>
-                      </div>
-                      <div className="mt-1 h-2 rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-teal" style={{ width: `${value}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h4 className="flex items-center gap-2 font-black">
-                <Flame className="h-4 w-4 text-coral" /> How committed is this student?
-              </h4>
-              <div className="mt-4 grid gap-2 text-sm">
-                <InsightRow label="Active days (7d / 30d)" value={`${selected.commitment.activeDays7} / ${selected.commitment.activeDays30}`} />
-                <InsightRow label="Questions this week" value={selected.commitment.questionsPerWeek} />
-                <InsightRow label="Total questions" value={selected.commitment.totalQuestions} />
-                <InsightRow label="Study minutes" value={selected.commitment.studyMinutes} />
-                <InsightRow label="Login streak" value={`${selected.commitment.loginStreak} days`} />
-                <InsightRow label="Practice streak" value={`${selected.commitment.practiceStreak} days`} />
-                <InsightRow label="Messages sent" value={selected.commitment.messageCount} />
-                <InsightRow label="Parent messages" value={selected.commitment.parentEngagement} />
-                <InsightRow label="Logins total" value={selected.commitment.loginCount} />
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h4 className="font-black">Recent answers</h4>
-              <div className="mt-3 space-y-2">
-                {selected.recentAnswers.map((answer) => (
-                  <div key={answer.id} className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-sm">
-                    <span className="font-bold">{answer.topic} · L{answer.level}</span>
-                    <span className={answer.correct ? "font-black text-leaf" : "font-black text-coral"}>{answer.correct ? "Correct" : "Wrong"}</span>
-                  </div>
-                ))}
-                {selected.recentAnswers.length === 0 && <p className="text-sm text-slate-500">No answer history yet.</p>}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <StudentInsightTabs studentId={selectedId} audience="admin" />
     </section>
   );
 }

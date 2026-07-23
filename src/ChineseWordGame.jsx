@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, RefreshCw, RotateCcw, Sparkles, Star, Trophy, Zap } from "lucide-react";
 import { entryGrade, formatChineseGrade, pickGameWords, wordKey } from "./data/chinese/index.js";
 import { useCelebration } from "./components/shared/Celebration.jsx";
+import { trackActivity } from "./lib/activityApi.js";
 
 function cx(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -105,6 +106,14 @@ export default function ChineseWordGame({ grade, words, rememberedSet, onWordRem
       if (nextMatched.size >= roundWords.length) {
         setPhase("complete");
         confettiCelebration();
+        trackActivity({
+          subject: "Chinese",
+          kind: "game",
+          mode: "word-match",
+          meta: { gameId: "match", pairs: roundWords.length, score: score + (isFast ? 2 : 1) },
+          durationMs: seconds * 1000 || Math.max(1000, Date.now() - lastMatchAtRef.current),
+          starsEarned: Math.max(1, Math.min(3, Math.round((score + (isFast ? 2 : 1)) / 3)))
+        });
       }
     } else {
       celebrateWrong();

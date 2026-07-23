@@ -16,7 +16,7 @@ const BUBBLE_DURATIONS = ["11s", "13s", "12s", "14s"];
 const BUBBLE_DELAYS = ["0s", "1s", "0.5s", "1.6s"];
 
 export default function BubblePop({ grade, words, rememberedSet, onWordRemembered, onExit }) {
-  const round = useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize: ROUND_SIZE });
+  const round = useGameRound({ words, grade, rememberedSet, onWordRemembered, roundSize: ROUND_SIZE, gameId: "bubbles" });
   const [hearts, setHearts] = useState(MAX_HEARTS);
   const [attempt, setAttempt] = useState(0);
   const [wrongPops, setWrongPops] = useState([]);

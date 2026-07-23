@@ -22,6 +22,13 @@ import {
 import { englishP4Questions } from "./englishQuestions.js";
 import { normalizeChineseProgress, recordChinesePracticeAnswer } from "./chineseProgress.js";
 import {
+  recordActivity,
+  recordStarEvent,
+  recordAnswerActivity,
+  ensureChineseProgressBuckets
+} from "./activity.js";
+import { buildStudentInsightsPayload, buildSubjectInsight, INSIGHT_SUBJECTS } from "./insights.js";
+import {
   listChineseGrades,
   getPack,
   savePack,
@@ -358,7 +365,6 @@ function applyEnglishAnswer(progress, question, isCorrect) {
       progress.correctStreak = 0;
       progress.levelHistory.push(progress.adaptiveLevel);
     }
-    progress.starsEarnedWeek = (progress.starsEarnedWeek || 0) + 2;
   } else {
     progress.topicMastery[question.topic] = Math.max(10, (progress.topicMastery[question.topic] || 40) - 4);
     if (progress.struggleStreak >= 2 && progress.adaptiveLevel > 1) {
@@ -865,7 +871,6 @@ app.post("/api/answer", async (req, res) => {
       progress.correctStreak = 0;
       progress.levelHistory.push(progress.adaptiveLevel);
     }
-    progress.starsEarnedWeek = (progress.starsEarnedWeek || 0) + 2;
   } else {
     progress.topicMastery[question.topic] = Math.max(10, (progress.topicMastery[question.topic] || 40) - 4);
     if (progress.struggleStreak >= 2 && progress.adaptiveLevel > 1) {
@@ -879,10 +884,7 @@ app.post("/api/answer", async (req, res) => {
   incrementStudyMinutes(db, studentId, "Math", 2);
   const student = db.users.find((u) => u.id === studentId);
   const starsEarned = isCorrect ? 2 : 0;
-  if (student) {
-    student.lastActiveAt = new Date().toISOString();
-    if (starsEarned) student.stars = (student.stars || 0) + starsEarned;
-  }
+  if (student) student.lastActiveAt = new Date().toISOString();
   const streakInfo = touchDailyStreak(db, studentId);
   const newAchievements = checkAchievements(db, studentId, progress, "Math");
 
@@ -897,6 +899,16 @@ app.post("/api/answer", async (req, res) => {
     difficulty: question.difficulty || "Medium",
     correct: isCorrect,
     at: new Date().toISOString()
+  });
+  recordAnswerActivity(db, {
+    studentId,
+    subject: "Math",
+    questionId,
+    topic: question.topic,
+    level: question.level,
+    correct: isCorrect,
+    starsEarned,
+    durationMs: 120000
   });
 
   await writeDb(db);
@@ -1016,10 +1028,7 @@ app.post("/api/english/answer", async (req, res) => {
   incrementStudyMinutes(db, studentId, "English", 2);
   const student = db.users.find((u) => u.id === studentId);
   const starsEarned = isCorrect ? 2 : 0;
-  if (student) {
-    student.lastActiveAt = new Date().toISOString();
-    if (starsEarned) student.stars = (student.stars || 0) + starsEarned;
-  }
+  if (student) student.lastActiveAt = new Date().toISOString();
   const streakInfo = touchDailyStreak(db, studentId);
   const newAchievements = checkAchievements(db, studentId, progress, "English");
 
@@ -1034,6 +1043,16 @@ app.post("/api/english/answer", async (req, res) => {
     difficulty: question.difficulty || "Medium",
     correct: isCorrect,
     at: new Date().toISOString()
+  });
+  recordAnswerActivity(db, {
+    studentId,
+    subject: "English",
+    questionId,
+    topic: question.topic,
+    level: question.level,
+    correct: isCorrect,
+    starsEarned,
+    durationMs: 120000
   });
 
   await writeDb(db);
@@ -1113,33 +1132,148 @@ app.get("/api/chinese/watch-series", async (req, res) => {
 
 app.post("/api/chinese/remember", async (req, res) => {
   const db = await readDb();
-  const { studentId, wordKey, timeMs, correct } = req.body;
+  const { studentId, wordKey, timeMs, correct, durationMs, starsEarned = 1 } = req.body;
   if (!studentId || !wordKey) {
     return res.status(400).json({ error: "Missing studentId or wordKey" });
   }
 
   const chineseProgress = ensureChineseProgress(db, studentId);
+  ensureChineseProgressBuckets(chineseProgress);
   const [grade] = String(wordKey).split("|");
   if (!grade) return res.status(400).json({ error: "Invalid wordKey" });
 
+  const at = new Date().toISOString();
+  let responsePayload = { chineseProgress, remembered: true, slowResponse: false };
+
   if (typeof timeMs === "number" && typeof correct === "boolean") {
     const result = recordChinesePracticeAnswer(chineseProgress, wordKey, { correct, timeMs });
-    await writeDb(db);
-    return res.json({
+    responsePayload = {
       chineseProgress,
       remembered: result.remembered,
       slowResponse: result.slowResponse,
       timeMs: result.timeMs,
       timingSummary: result.timingSummary
+    };
+  } else {
+    const remembered = new Set(chineseProgress.rememberedWords[grade] || []);
+    remembered.add(wordKey);
+    chineseProgress.rememberedWords[grade] = Array.from(remembered);
+  }
+
+  const isCorrect = typeof correct === "boolean" ? correct : true;
+  const awarded = isCorrect ? Math.max(0, Number(starsEarned) || 1) : 0;
+  recordActivity(db, {
+    studentId,
+    subject: "Chinese",
+    kind: "practice",
+    mode: "vocab",
+    meta: {
+      wordKey,
+      grade,
+      correct: isCorrect,
+      timeMs: typeof timeMs === "number" ? timeMs : undefined
+    },
+    durationMs: typeof durationMs === "number" ? durationMs : typeof timeMs === "number" ? timeMs : 15000,
+    starsEarned: awarded,
+    at
+  });
+  if (awarded) {
+    recordStarEvent(db, {
+      studentId,
+      subject: "Chinese",
+      amount: awarded,
+      reason: "chinese-word",
+      at
     });
   }
 
-  const remembered = new Set(chineseProgress.rememberedWords[grade] || []);
-  remembered.add(wordKey);
-  chineseProgress.rememberedWords[grade] = Array.from(remembered);
   await writeDb(db);
+  const student = db.users.find((entry) => entry.id === studentId);
+  res.json({
+    ...responsePayload,
+    stars: student?.stars || 0,
+    starsEarned: awarded
+  });
+});
 
-  res.json({ chineseProgress, remembered: true, slowResponse: false });
+app.post("/api/activity", auth, async (req, res) => {
+  const db = req.db;
+  const roles = getUserRoles(req.user);
+  let studentId = String(req.body.studentId || "").trim();
+  if (!studentId) {
+    studentId = roles.includes("student") ? req.user.id : "";
+  }
+  if (!studentId) return res.status(400).json({ error: "studentId is required" });
+
+  if (roles.includes("admin")) {
+    // ok
+  } else if (roles.includes("parent")) {
+    if (!getLinkedStudentIds(req.user).includes(studentId)) {
+      return res.status(403).json({ error: "Not linked to this student" });
+    }
+  } else if (roles.includes("student")) {
+    if (studentId !== req.user.id) return res.status(403).json({ error: "Forbidden" });
+  } else {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const subject = String(req.body.subject || "").trim();
+  if (!INSIGHT_SUBJECTS.includes(subject)) {
+    return res.status(400).json({ error: "Invalid subject" });
+  }
+
+  const kind = String(req.body.kind || "practice").trim();
+  const durationMs = Math.max(0, Number(req.body.durationMs) || 0);
+  const starsEarned = Math.max(0, Number(req.body.starsEarned) || 0);
+  if (subject === "Chinese") {
+    ensureChineseProgressBuckets(ensureChineseProgress(db, studentId));
+  }
+
+  const activity = recordActivity(db, {
+    studentId,
+    subject,
+    kind,
+    mode: String(req.body.mode || ""),
+    meta: req.body.meta || {},
+    durationMs,
+    starsEarned
+  });
+  let star = null;
+  if (starsEarned) {
+    star = recordStarEvent(db, {
+      studentId,
+      subject,
+      amount: starsEarned,
+      reason: String(req.body.reason || kind)
+    });
+  }
+  await writeDb(db);
+  const student = db.users.find((entry) => entry.id === studentId);
+  res.status(201).json({ activity, star, stars: student?.stars || 0 });
+});
+
+app.get("/api/insights/:studentId", auth, async (req, res) => {
+  const studentId = String(req.params.studentId || "").trim();
+  const roles = getUserRoles(req.user);
+  const allowed =
+    roles.includes("admin") ||
+    (roles.includes("student") && req.user.id === studentId) ||
+    (roles.includes("parent") && getLinkedStudentIds(req.user).includes(studentId));
+  if (!allowed) return res.status(403).json({ error: "Forbidden" });
+
+  const subject = req.query.subject ? String(req.query.subject) : "";
+  if (subject) {
+    if (!INSIGHT_SUBJECTS.includes(subject)) {
+      return res.status(400).json({ error: "Invalid subject" });
+    }
+    const insight = buildSubjectInsight(req.db, studentId, subject);
+    if (!insight) return res.status(404).json({ error: "Student not found" });
+    return res.json(insight);
+  }
+
+  const payload = buildStudentInsightsPayload(req.db, studentId);
+  if (!payload) return res.status(404).json({ error: "Student not found" });
+  res.json(payload);
 });
 
 app.post("/api/messages", async (req, res) => {
@@ -1560,7 +1694,6 @@ app.post("/api/science/answer", async (req, res) => {
       progress.correctStreak = 0;
       progress.levelHistory.push(progress.adaptiveLevel);
     }
-    progress.starsEarnedWeek = (progress.starsEarnedWeek || 0) + 2;
   } else {
     progress.topicMastery[question.topic] = Math.max(10, (progress.topicMastery[question.topic] || 40) - 4);
     if (progress.struggleStreak >= 2 && progress.adaptiveLevel > 1) {
@@ -1573,10 +1706,7 @@ app.post("/api/science/answer", async (req, res) => {
   incrementStudyMinutes(db, studentId, "Science", 2);
   const student = db.users.find((u) => u.id === studentId);
   const starsEarned = isCorrect ? 2 : 0;
-  if (student) {
-    student.lastActiveAt = new Date().toISOString();
-    if (starsEarned) student.stars = (student.stars || 0) + starsEarned;
-  }
+  if (student) student.lastActiveAt = new Date().toISOString();
   const streakInfo = touchDailyStreak(db, studentId);
   const newAchievements = checkAchievements(db, studentId, progress, "Science");
 
@@ -1591,6 +1721,16 @@ app.post("/api/science/answer", async (req, res) => {
     difficulty: question.difficulty || "Medium",
     correct: isCorrect,
     at: new Date().toISOString()
+  });
+  recordAnswerActivity(db, {
+    studentId,
+    subject: "Science",
+    questionId,
+    topic: question.topic,
+    level: question.level,
+    correct: isCorrect,
+    starsEarned,
+    durationMs: 120000
   });
 
   await writeDb(db);

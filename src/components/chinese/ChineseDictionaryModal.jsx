@@ -3,6 +3,7 @@ import { BookMarked, Check, Eraser, Undo2, Volume2, X } from "lucide-react";
 import { ensureDictionaryReady, lookupSuggestions } from "../../lib/chineseDictionary.js";
 import { ensureHandwritingReady, recognizeStrokes } from "../../utils/chineseHandwriting.js";
 import { speakChineseWord } from "../../utils/chinesePronunciation.js";
+import { createActivitySession } from "../../lib/activityApi.js";
 
 const MAX_CHARS = 3;
 const RECOGNIZE_LIMIT = 8;
@@ -38,6 +39,17 @@ export default function ChineseDictionaryModal({ onClose }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  useEffect(() => {
+    const session = createActivitySession({
+      subject: "Chinese",
+      kind: "dictionary",
+      mode: "draw-lookup"
+    });
+    return () => {
+      void session.end({ minMs: 2000 });
+    };
+  }, []);
 
   // Lock page scroll while the dictionary is open so the pad can't jump.
   useEffect(() => {

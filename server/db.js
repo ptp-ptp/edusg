@@ -32,6 +32,8 @@ function emptyDb() {
     questions: [],
     loginEvents: [],
     answerEvents: [],
+    activityEvents: [],
+    starEvents: [],
     achievements: [],
     goals: [],
     studySessions: [],
@@ -51,6 +53,8 @@ function emptyDb() {
 function ensureDbShape(db) {
   db.loginEvents = db.loginEvents || [];
   db.answerEvents = db.answerEvents || [];
+  db.activityEvents = db.activityEvents || [];
+  db.starEvents = db.starEvents || [];
   db.achievements = db.achievements || [];
   db.goals = db.goals || [];
   db.studySessions = db.studySessions || [];
@@ -217,6 +221,8 @@ function supabaseRowToDb(data) {
     questions: data.questions || [],
     loginEvents: data.login_events || data.loginEvents || [],
     answerEvents: data.answer_events || data.answerEvents || [],
+    activityEvents: data.activity_events || data.activityEvents || [],
+    starEvents: data.star_events || data.starEvents || [],
     achievements: data.achievements || [],
     goals: data.goals || [],
     studySessions: data.study_sessions || data.studySessions || [],
@@ -238,6 +244,8 @@ function dbToSupabaseRow(db, { includeChinese = false } = {}) {
     questions: db.questions,
     login_events: db.loginEvents,
     answer_events: db.answerEvents,
+    activity_events: db.activityEvents || [],
+    star_events: db.starEvents || [],
     achievements: db.achievements || [],
     goals: db.goals || [],
     study_sessions: db.studySessions || [],
@@ -296,8 +304,9 @@ let supabaseDbCacheAt = 0;
 let supabaseChineseCache = null;
 let supabaseChineseCacheAt = 0;
 
-const SUPABASE_CORE_COLUMNS =
+const SUPABASE_BASE_COLUMNS =
   "id,users,progress,messages,questions,login_events,answer_events,achievements,goals,study_sessions,notifications,rewards_catalog,reward_redemptions,platform_settings,audit_events,updated_at";
+const SUPABASE_CORE_COLUMNS = `${SUPABASE_BASE_COLUMNS},activity_events,star_events`;
 
 function invalidateSupabaseCache() {
   supabaseDbCache = null;
@@ -316,9 +325,14 @@ async function readSupabaseDb({ includeChinese = false } = {}) {
   let chineseSelected = includeChinese;
   let select = chineseSelected ? `${SUPABASE_CORE_COLUMNS},chinese_content` : SUPABASE_CORE_COLUMNS;
   let { data, error } = await supabase.from("app_state").select(select).eq("id", "main").maybeSingle();
+  if (error?.code === "42703") {
+    // activity_events / star_events may be missing before migration.
+    select = chineseSelected ? `${SUPABASE_BASE_COLUMNS},chinese_content` : SUPABASE_BASE_COLUMNS;
+    ({ data, error } = await supabase.from("app_state").select(select).eq("id", "main").maybeSingle());
+  }
   if (error?.code === "42703" && chineseSelected) {
     chineseSelected = false;
-    ({ data, error } = await supabase.from("app_state").select(SUPABASE_CORE_COLUMNS).eq("id", "main").maybeSingle());
+    ({ data, error } = await supabase.from("app_state").select(SUPABASE_BASE_COLUMNS).eq("id", "main").maybeSingle());
   }
   if (error) throw error;
 
@@ -365,7 +379,13 @@ async function readSupabaseDb({ includeChinese = false } = {}) {
 
 async function writeSupabaseDb(db, { includeChinese = false } = {}) {
   const row = dbToSupabaseRow(db, { includeChinese: includeChinese || db._chineseLoaded });
-  const { error } = await supabase.from("app_state").upsert(row);
+  let { error } = await supabase.from("app_state").upsert(row);
+  if (error?.code === "42703") {
+    // Persist core state even if activity/star ledger columns are not migrated yet.
+    delete row.activity_events;
+    delete row.star_events;
+    ({ error } = await supabase.from("app_state").upsert(row));
+  }
   if (error) throw error;
   invalidateSupabaseCache();
   if (includeChinese || db._chineseLoaded) {

@@ -14,6 +14,7 @@ import {
 } from "../../components/shared/DashboardWidgets";
 import DailyQuestCard from "../../components/shared/DailyQuestCard";
 import Ollie from "../../components/shared/Ollie";
+import StudentInsightTabs from "../../components/insights/StudentInsightTabs";
 
 const subjectColors = {
   Math: "bg-teal",
@@ -182,6 +183,14 @@ export default function StudentHome() {
           <div className="text-center text-xs text-slate-500">
             {data.weekly.studyMinutes}m studied · {data.weekly.accuracy}% accuracy
           </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-black">My insights</h2>
+        <p className="mt-1 text-sm text-slate-500">See how you are doing in each subject.</p>
+        <div className="mt-3">
+          <StudentInsightTabs studentId={student.id} audience="student" />
         </div>
       </section>
 

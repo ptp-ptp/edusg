@@ -3,6 +3,7 @@ import { BookOpenText, Maximize2, Minimize2, MonitorPlay, Play, X } from "lucide
 import { fetchChineseWatchSeries } from "../../lib/chineseContentApi.js";
 import { speakChineseWord } from "../../utils/chinesePronunciation.js";
 import { PlayPronunciationButton } from "./chineseDisplay.jsx";
+import { createActivitySession } from "../../lib/activityApi.js";
 
 /**
  * Turns any YouTube link (watch, youtu.be, playlist) into an embeddable URL.
@@ -333,6 +334,20 @@ function WatchPlayerModal({ series, part, onClose }) {
     [part.transcript, part.vocabs]
   );
   const activeSubtitleIndex = findActiveSubtitleIndex(playback.time, karaoke.blocks);
+  const watchSessionRef = useRef(null);
+
+  useEffect(() => {
+    watchSessionRef.current = createActivitySession({
+      subject: "Chinese",
+      kind: "watch",
+      mode: "youtube",
+      meta: { episodeId: part?.id || part?.youtubeId || "", title: part?.title || "" }
+    });
+    return () => {
+      void watchSessionRef.current?.end({ minMs: 5000 });
+      watchSessionRef.current = null;
+    };
+  }, [part?.id, part?.youtubeId, part?.title]);
 
   useEffect(() => {
     if (!embedUrl) return undefined;
